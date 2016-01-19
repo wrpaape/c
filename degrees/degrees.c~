@@ -13,7 +13,7 @@ int main()
 
   fahrenheit = 9.0 * celsius / 5.0 + 32.0;
 
-  printf("\e[31m]%f °C is %f °F\n", celsius, fahrenheit);
+  printf("\e[31m%f °C is %f °F\n", celsius, fahrenheit);
   
   return 0;
 }

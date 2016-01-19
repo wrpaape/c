@@ -1,0 +1,15 @@
+#include <stdio.h>
+#include <math.h>
+float square_root;
+float exponent;
+
+int main()
+{
+  square_root = sqrt(5);
+  exponent = pow(5, 3);
+
+  fprintf("%f\n", square_root);
+  fprintf("%f\n", exponent);
+  
+  return 0;
+}
