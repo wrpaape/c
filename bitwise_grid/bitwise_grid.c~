@@ -71,7 +71,6 @@ void flip_bit(int x, int y)
  ******************************************/
 void print_grid()
 {
-  /* int byte_x;                            /1* byte coordinate in X direction *1/ */
   int x;                                 /* screen coordinate in X direction */
   int y;                                 /* screen coordinate in Y direction */
   unsigned char bit_x;                   /* bit coordinate in X direction */
