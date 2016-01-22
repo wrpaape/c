@@ -3,23 +3,30 @@
 #include <stdlib.h>
 #include <time.h>
 
+struct Results {
+  char *final_string_ptr;
+  int replace_count;
+};
+
 const char INPUT_FORMAT[]    = "\e[37m<string>\e[0m/\e[35m<find_str>\e[0m/\e[36m<replace_str>\e[0m";
 const char INPUT_ERROR_MSG[] = "\e[31mERROR pls delimit ur input with slashes accordings to:\e[0m";
 
 char *gets_trimmed(char *input_buffer, int buffer_size);                      /* retrieve and trim user input */
 char *split_slash(char *string_ptr);                                          /* returns pointer to char after next slash */
-char *find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr);  /* global find and replace */
+struct Results find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr);  /* global find and replace */
 void report_results(char *final_ptr, int num_replaced, clock_t time_elapsed); /* prints program results */
+
 
 int main(void)
 {
+  struct Results results;
   clock_t start;     /* time of program start */
   clock_t finish;    /* time of program finish */
   char input[80];    /* input to be processed */
   char *string_ptr;  /* pointer to string */
   char *find_ptr;    /* pointer to target substring */
   char *replace_ptr; /* pointer to replacement substring */
-  char *results_ptr; /* pointer to array of results from 'find_and_replace' */
+  /* char *results_ptr; /1* pointer to array of results from 'find_and_replace' *1/ */
 
   string_ptr  = gets_trimmed(input, sizeof(input));                  /* point 'string_ptr' at beginning of input */
 
@@ -29,7 +36,7 @@ int main(void)
 
   replace_ptr = split_slash(find_ptr);                               /* trim find_str and set pointer to start of replace_str */
 
-  results_ptr = find_and_replace(string_ptr, find_ptr, replace_ptr); /* perform global find and replace */
+  results = find_and_replace(string_ptr, find_ptr, replace_ptr); /* perform global find and replace */
 
   finish      = clock();                                             /* finish time */
 
@@ -95,8 +102,11 @@ char *split_slash(char *string_ptr)
  * loops through string indicated by 'string_ptr', replacing instances of   *
  * substring indicated by 'find_ptr' with string indicated by 'replace_ptr' *
  ****************************************************************************/
-char *find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
+struct Results find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
 {
+  struct Results results = {string_ptr, 0};
+
+
   char results_ptrs[2];             /* pointer to array containing new string and number of replacements made */
   int length_find_str    = strlen(find_ptr);    /* length of target substring */
   int length_replace_str = strlen(replace_ptr); /* length of replacement string */
@@ -121,7 +131,7 @@ char *find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
 
         string_ptr = temp_ptr;
 
-        ++replace_count;
+        ++results.replace_count;
 
         find_ptr -= length_find_str;
       }
@@ -134,13 +144,10 @@ char *find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
     ++string_ptr;
   }
 
-  printf("final_string_ptr: %s\n", final_string_ptr);
-  printf("replace_count:    %d\n",    replace_count);
+  printf("final_string_ptr: %s\n", results.final_string_ptr);
+  printf("replace_count:    %d\n",   results.replace_count);
 
-  results_ptrs[0] = final_string_ptr;
-  results_ptrs[1] = &replace_count;
-
-  return results_ptrs;
+  return results;
 }
 
 
