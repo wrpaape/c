@@ -114,8 +114,6 @@ struct Results find_and_replace(const char *string_ptr, const char *find_ptr, co
 
   int match_count  = 0; /* counter tracking the consecutive matches of target substring */
 
-  printf("%s\n", string_ptr);
-
   while (*string_ptr != '\0') {
     if (*string_ptr == *find_ptr) {
       ++match_count;
@@ -140,26 +138,34 @@ struct Results find_and_replace(const char *string_ptr, const char *find_ptr, co
         find_ptr    -= length_find_str;
         match_count = 0;
       }
-    } else if (match_count == 0) {
+    } else {
+
+      if (match_count > 0) {
+        printf("\nstring_ptr first pointed to: %c\n", *string_ptr);
+
+        find_ptr   -= match_count;
+
+        string_ptr -= match_count;
+
+        printf("string_ptr then pointed to: %c\n", *string_ptr);
+
+        while (match_count > 0) {
+          printf("******************************\n");
+          printf("match_count: %u\n", match_count);
+          printf("results.string_ptr: %s\n", results.string_ptr);
+          *final_string_ptr = *string_ptr;
+          printf("results.string_ptr: %s\n", results.string_ptr);
+          printf("******************************\n");
+
+          ++final_string_ptr;
+          ++string_ptr;
+          --match_count;
+        }
+      }
 
       *final_string_ptr = *string_ptr;
 
       ++final_string_ptr;
-
-    } else {
-      printf("case 3");
-      printf("match_count: %u\n", match_count);
-      find_ptr   -= match_count;
-
-      string_ptr -= match_count;
-
-      while (match_count > 0) {
-        *final_string_ptr = *string_ptr;
-
-        ++final_string_ptr;
-        ++string_ptr;
-        --match_count;
-      }
     }
 
   /* printf("results.string_ptr: %p\n", results.string_ptr); */
