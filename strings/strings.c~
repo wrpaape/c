@@ -6,7 +6,7 @@
 #define MAX_BUFFER_SIZE 80
 
 struct Results {
-  char *final_string_ptr;
+  char *string_ptr;
   int replace_count;
 };
 
@@ -15,7 +15,7 @@ const char INPUT_ERROR_MSG[] = "\e[31mERROR pls delimit ur input with slashes ac
 
 char *gets_trimmed(char *input_buffer, int buffer_size);                      /* retrieve and trim user input */
 char *split_slash(char *string_ptr);                                          /* returns pointer to char after next slash */
-struct Results find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr);  /* global find and replace */
+struct Results find_and_replace(const char *string_ptr, const char *find_ptr, const char *replace_ptr);  /* global find and replace */
 void report_results(char *final_ptr, int num_replaced, clock_t time_elapsed); /* prints program results */
 
 
@@ -104,58 +104,65 @@ char *split_slash(char *string_ptr)
  * loops through string indicated by 'string_ptr', replacing instances of   *
  * substring indicated by 'find_ptr' with string indicated by 'replace_ptr' *
  ****************************************************************************/
-struct Results find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
+struct Results find_and_replace(const char *string_ptr, const char *find_ptr, const char *replace_ptr)
 {
-  struct Results results = {malloc(MAX_BUFFER_SIZE), 0};
+  char *final_string_ptr = /*(char *)*/ malloc(MAX_BUFFER_SIZE);
+  struct Results results = {final_string_ptr, 0};
 
   int length_find_str    = strlen(find_ptr);    /* length of target substring */
   int length_replace_str = strlen(replace_ptr); /* length of replacement string */
 
-  char *final_string_ptr = string_ptr;
-  char *temp_ptr;
-  int match_count   = 0; /* counter tracking the consecutive matches of target substring */
+  int match_count  = 0; /* counter tracking the consecutive matches of target substring */
 
   while (*string_ptr != '\0') {
     if (*string_ptr == *find_ptr) {
       ++match_count;
       ++find_ptr;
 
-      printf("%c matches %c\n", *string_ptr, *find_ptr);
-      printf("match_count: %d\n", match_count);
-      printf("length_find_str: %d\n", length_find_str);
+      /* printf("%c matches %c\n", *string_ptr, *find_ptr); */
+      /* printf("match_count: %u\n", match_count); */
+      /* printf("length_find_str: %u\n", length_find_str); */
 
       if (match_count == length_find_str) {
-        temp_ptr = string_ptr;
 
-        string_ptr -= length_find_str;
+        while(*replace_ptr != '\0') {
+          *final_string_ptr = *replace_ptr;
 
-        string_ptr = replace_ptr;
-        
-        string_ptr += (length_replace_str + 1);
-
-        string_ptr = temp_ptr;
+          ++final_string_ptr;
+          ++replace_ptr;
+        }
 
         ++results.replace_count;
 
-        find_ptr -= length_find_str;
+        replace_ptr -= length_replace_str;
+        find_ptr    -= length_find_str;
       }
+    } else if (match_count == 0) {
+
+      *final_string_ptr = *string_ptr;
+
     } else {
+      find_ptr   -= match_count;
 
-      *results.final_string_ptr = *string_ptr;
+      string_ptr -= match_count;
 
-      find_ptr -= match_count;
+      while (match_count > 0) {
+        *final_string_ptr = *string_ptr;
 
-      match_count = 0;
+        ++final_string_ptr;
+        ++string_ptr;
+        --match_count;
+      }
     }
 
-    ++results.final_string_ptr;
+    ++final_string_ptr;
     ++string_ptr;
   }
 
-  *results.final_string_ptr = '\0';
+  *final_string_ptr = '\0';
 
-  printf("final_string_ptr: %s\n", results.final_string_ptr);
-  printf("replace_count:    %d\n",   results.replace_count);
+  printf("string_ptr: %s\n", results.string_ptr);
+  printf("replace_count: %d\n", results.replace_count);
 
   return results;
 }
