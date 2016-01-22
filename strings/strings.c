@@ -6,7 +6,7 @@ const char INPUT_FORMAT[]     = "\e[37m<string>\e[0m/\e[35m<find_str>\e[0m/\e[36
 const char INPUT_ERROR_MSG[]  = "\e[31mERROR pls delimit ur input with slashes accordings to:\e[0m";
 
 char *gets_trimmed(char *input_buffer, int buffer_size); /* retrieve and trim user input */
-char *my_strchar(char *string_ptr, char find_char);      /* copycat 'strchar' from string.h */
+char *split_slash(char *string_ptr);                     /* returns pointer to char after next slash */
 
 int main(void)
 {
@@ -15,54 +15,29 @@ int main(void)
   char *find_ptr;    /* pointer to target substring */
   char *replace_ptr; /* pointer to replacement substring */
 
-  string_ptr = gets_trimmed(input, sizeof(input)); /* point 'string_ptr' at beginning of input */
+  string_ptr =  gets_trimmed(input, sizeof(input)); /* point 'string_ptr' at beginning of input */
+
+  find_ptr =    split_slash(string_ptr);            /* trim string and set pointer to start of find_str */
+
+  replace_ptr = split_slash(find_ptr);              /* trim find_str and set pointer to start of replace_str */
+
+
+  /* int length_string   = strlen(*string_ptr); /1* length of total string *1/ */
+  /* int length_find_str = strlen(*find_ptr);   /1* length of target substring *1/ */
+
+  /* int string_index = 0; */
+  /* int match_index  = 0; */
+
+
+  /* while ((strlen(*string_ptr) - string_index) >= strlen(*find_ptr)) { */
+
+
+  /* } */
 
   printf("string_ptr:  %s\n",  string_ptr);
-  /* printf("find_ptr:    %s\n",    find_ptr); */
-  /* printf("replace_ptr: %s\n", replace_ptr); */
+  printf("find_ptr:    %s\n",    find_ptr);
+  printf("replace_ptr: %s\n", replace_ptr);
   
-  
-
-  /* string_ptr = input;                /1* point string_ptr at beginning of input *1/ */
-
-
-/*   find_ptr = my_strchar(input, '/'); /1* locate first slash in input *1/ */
-
-/*   if (find_ptr == NULL) { */
-/*     fprintf(stderr, "\n  %s\n\n%s", INPUT_ERROR_MSG, INPUT_FORMAT); /1* exit on input error is no slash found *1/ */
-
-/*     exit(8); */
-/*   } */
-
-/*   *find_ptr = '\0'; /1* dereference pointer to slash and replace with null char *1/ */
-
-/*   ++find_ptr;       /1* inc pointer so that it now points to beginning of find_str *1/ */
-
-
-/*   replace_ptr = my_strchar(find_ptr, '/'); /1* locate next slash in input *1/ */
-
-/*   if (replace_ptr == NULL) { */
-/*     fprintf(stderr, "\n%s\n\n  %s\n", INPUT_ERROR_MSG, INPUT_FORMAT); /1* exit on input error is no slash found *1/ */
-
-/*     exit(8); */
-/*   } */
-
-/*   *replace_ptr = '\0'; /1* dereference pointer to slash and replace with null char *1/ */
-
-/*   ++replace_ptr;       /1* inc pointer so that it now points to beginning of replace_str *1/ */
-
-
-/*   int length_string   = strlen(*string_ptr); /1* length of total string *1/ */
-/*   int length_find_str = strlen(*find_ptr);   /1* length of target substring *1/ */
-
-/*   int string_index = 0; */
-/*   int match_index  = 0; */
-
-
-/*   while ((strlen(*string_ptr) - string_index) >= strlen(*find_ptr)) { */
-
-
-/*   } */
 
 
   return 0;
@@ -74,8 +49,8 @@ int main(void)
  * retrieves user input from stdin  *
  * and removes the trailing newline *
  ************************************/
-char *gets_trimmed(char *input_buffer, int buffer_size) {
-
+char *gets_trimmed(char *input_buffer, int buffer_size)
+{
   printf("%s\n  \e[5m>\e[25m ", INPUT_FORMAT); /* prompt user for input */
 
   fgets(input_buffer, buffer_size, stdin);     /* set user input to 'input_buffer' */
@@ -86,27 +61,34 @@ char *gets_trimmed(char *input_buffer, int buffer_size) {
 }
 
 
-/************************************************
- *                - my_strchar -                *
- *                                              *
- * loops through string referenced by           *
- * 'string_ptr' until char 'find_char'          *
- * is found                                     *
- *                                              *
- * string_ptr is incremented accordingly and    *
- * set to 'NULL' if 'find_char' is not found    *
- *                                              *
- * clone of standard library function 'strchar' *
- ************************************************/
-char *my_strchar(char *string_ptr, char find_char)
+/*************************************************************************
+ *                            - split_slash -                            *
+ *                                                                       *
+ * loops through string referenced by 'string_ptr' until slash is found  *
+ *                                                                       *
+ * slash is set to '\0' and 'string_ptr' is incremented to point at char *
+ * immediately following slash                                           *
+ *                                                                       *
+ * if no slash is found, the program exits with status '8'               *
+ *                                                                       *
+ * implements a clone of standard library function 'strchar'             *
+ *************************************************************************/
+char *split_slash(char *string_ptr)
 {
-  while (*string_ptr != find_char) {
+  while (*string_ptr != '/') {
     if (*string_ptr == '\0') {
-      return NULL;   /* 'find_char' not found */
+      fprintf(stderr, "\n  %s\n\n%s", INPUT_ERROR_MSG, INPUT_FORMAT); /* exit on input error is no slash found */
+
+      exit(8);
     }
 
     ++string_ptr;
   }
+
+
+  *string_ptr = '\0'; /* dereference pointer to slash and replace with null char */
+
+  ++string_ptr;       /* inc pointer so that it now points to char immediately after slash*/
 
   return string_ptr; /* string_ptr now points at find_char */
 }
