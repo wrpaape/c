@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define MAX_BUFFER_SIZE 80
+
 struct Results {
   char *final_string_ptr;
   int replace_count;
@@ -20,12 +22,12 @@ void report_results(char *final_ptr, int num_replaced, clock_t time_elapsed); /*
 int main(void)
 {
   struct Results results;
-  clock_t start;     /* time of program start */
-  clock_t finish;    /* time of program finish */
-  char input[80];    /* input to be processed */
-  char *string_ptr;  /* pointer to string */
-  char *find_ptr;    /* pointer to target substring */
-  char *replace_ptr; /* pointer to replacement substring */
+  clock_t start;                  /* time of program start */
+  clock_t finish;                 /* time of program finish */
+  char input[MAX_BUFFER_SIZE];    /* input to be processed */
+  char *string_ptr;               /* pointer to string */
+  char *find_ptr;                 /* pointer to target substring */
+  char *replace_ptr;              /* pointer to replacement substring */
   /* char *results_ptr; /1* pointer to array of results from 'find_and_replace' *1/ */
 
   string_ptr  = gets_trimmed(input, sizeof(input));                  /* point 'string_ptr' at beginning of input */
@@ -104,28 +106,30 @@ char *split_slash(char *string_ptr)
  ****************************************************************************/
 struct Results find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
 {
-  struct Results results = {string_ptr, 0};
+  struct Results results = {malloc(MAX_BUFFER_SIZE), 0};
 
-
-  char results_ptrs[2];             /* pointer to array containing new string and number of replacements made */
   int length_find_str    = strlen(find_ptr);    /* length of target substring */
   int length_replace_str = strlen(replace_ptr); /* length of replacement string */
 
   char *final_string_ptr = string_ptr;
   char *temp_ptr;
   int match_count   = 0; /* counter tracking the consecutive matches of target substring */
-  int replace_count = 0; /* counter tracking the number of replacements made */
 
   while (*string_ptr != '\0') {
     if (*string_ptr == *find_ptr) {
       ++match_count;
+      ++find_ptr;
+
+      printf("%c matches %c\n", *string_ptr, *find_ptr);
+      printf("match_count: %d\n", match_count);
+      printf("length_find_str: %d\n", length_find_str);
 
       if (match_count == length_find_str) {
         temp_ptr = string_ptr;
 
         string_ptr -= length_find_str;
 
-        *string_ptr = *replace_ptr;
+        string_ptr = replace_ptr;
         
         string_ptr += (length_replace_str + 1);
 
@@ -136,13 +140,19 @@ struct Results find_and_replace(char *string_ptr, char *find_ptr, char *replace_
         find_ptr -= length_find_str;
       }
     } else {
+
+      *results.final_string_ptr = *string_ptr;
+
       find_ptr -= match_count;
 
       match_count = 0;
     }
 
+    ++results.final_string_ptr;
     ++string_ptr;
   }
+
+  *results.final_string_ptr = '\0';
 
   printf("final_string_ptr: %s\n", results.final_string_ptr);
   printf("replace_count:    %d\n",   results.replace_count);
