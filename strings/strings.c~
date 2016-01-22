@@ -104,7 +104,7 @@ char *find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
   char *final_string_ptr = string_ptr;
   char *temp_ptr;
   int match_count   = 0; /* counter tracking the consecutive matches of target substring */
-  int *replace_count_ptr = 0; /* counter tracking the number of replacements made */
+  int replace_count = 0; /* counter tracking the number of replacements made */
 
   while (*string_ptr != '\0') {
     if (*string_ptr == *find_ptr) {
@@ -121,7 +121,7 @@ char *find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
 
         string_ptr = temp_ptr;
 
-        ++(*replace_count_ptr);
+        ++replace_count;
 
         find_ptr -= length_find_str;
       }
@@ -138,7 +138,7 @@ char *find_and_replace(char *string_ptr, char *find_ptr, char *replace_ptr)
   printf("replace_count:    %d\n",    replace_count);
 
   results_ptrs[0] = final_string_ptr;
-  results_ptrs[1] = replace_count_ptr;
+  results_ptrs[1] = &replace_count;
 
   return results_ptrs;
 }
