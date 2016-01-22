@@ -8,17 +8,21 @@
 struct Results {
   char *string_ptr;
   int replace_count;
-};
+}; /* two fielded structure for storing results of 'find_and_replace' */
 
 const char INPUT_FORMAT[]    = "\e[37m<string>\e[0m/\e[35m<find_str>\e[0m/\e[36m<replace_str>\e[0m";
 const char INPUT_ERROR_MSG[] = "\e[31mERROR pls delimit ur input with slashes accordings to:\e[0m";
 
-char *gets_trimmed(char *input_buffer, int buffer_size);                      /* retrieve and trim user input */
-char *split_slash(char *string_ptr);                                          /* returns pointer to char after next slash */
-struct Results find_and_replace(const char *string_ptr, const char *find_ptr, const char *replace_ptr);  /* global find and replace */
-void report_results(char *final_ptr, int num_replaced, clock_t time_elapsed); /* prints program results */
+char *gets_trimmed(char *input_buffer, int buffer_size);                                                /* retrieve and trim user input */
+char *split_slash(char *string_ptr);                                                                    /* returns pointer to char after next slash */
+struct Results find_and_replace(const char *string_ptr, const char *find_ptr, const char *replace_ptr); /* global find and replace */
+void report_results(struct Results results, clock_t time_elapsed);                                      /* prints program results */
 
 
+/*******************************************************
+ *- main -*
+ *
+ */
 int main(void)
 {
   struct Results results;
@@ -28,7 +32,6 @@ int main(void)
   char *string_ptr;               /* pointer to string */
   char *find_ptr;                 /* pointer to target substring */
   char *replace_ptr;              /* pointer to replacement substring */
-  /* char *results_ptr; /1* pointer to array of results from 'find_and_replace' *1/ */
 
   string_ptr  = gets_trimmed(input, sizeof(input));                  /* point 'string_ptr' at beginning of input */
 
@@ -38,11 +41,11 @@ int main(void)
 
   replace_ptr = split_slash(find_ptr);                               /* trim find_str and set pointer to start of replace_str */
 
-  results = find_and_replace(string_ptr, find_ptr, replace_ptr); /* perform global find and replace */
+  results     = find_and_replace(string_ptr, find_ptr, replace_ptr); /* perform global find and replace */
 
   finish      = clock();                                             /* finish time */
 
-  /* report_results(*results_ptr, *(results_ptr + 1), finish - start);    /1* print program results *1/ */
+  report_results(results, finish - start);                           /* print program results */
 
   return 0;
 } 
@@ -106,22 +109,18 @@ char *split_slash(char *string_ptr)
  ****************************************************************************/
 struct Results find_and_replace(const char *string_ptr, const char *find_ptr, const char *replace_ptr)
 {
-  char *final_string_ptr = (char *) malloc(MAX_BUFFER_SIZE);
-  struct Results results = {final_string_ptr, 0};
+  const int length_find_str    = strlen(find_ptr);           /* length of target substring */
+  const int length_replace_str = strlen(replace_ptr);        /* length of replacement string */
 
-  int length_find_str    = strlen(find_ptr);    /* length of target substring */
-  int length_replace_str = strlen(replace_ptr); /* length of replacement string */
+  char *final_string_ptr = (char *) malloc(MAX_BUFFER_SIZE); /* allocate an empty buffer to store final string */
+  struct Results results = {final_string_ptr, 0};            /* point results.string_ptr at beginning of final string and set replace_count to 0 */
 
-  int match_count  = 0; /* counter tracking the consecutive matches of target substring */
+  int match_count  = 0;                                      /* counter tracking the consecutive matching chars of string with target substring */
 
   while (*string_ptr != '\0') {
     if (*string_ptr == *find_ptr) {
       ++match_count;
       ++find_ptr;
-
-      /* printf("%c matches %c\n", *string_ptr, *find_ptr); */
-      /* printf("match_count: %u\n", match_count); */
-      /* printf("length_find_str: %u\n", length_find_str); */
 
       if (match_count == length_find_str) {
 
@@ -135,27 +134,20 @@ struct Results find_and_replace(const char *string_ptr, const char *find_ptr, co
         ++results.replace_count;
 
         replace_ptr -= length_replace_str;
+
         find_ptr    -= length_find_str;
+
         match_count = 0;
       }
     } else {
 
       if (match_count > 0) {
-        printf("\nstring_ptr first pointed to: %c\n", *string_ptr);
 
         find_ptr   -= match_count;
-
         string_ptr -= match_count;
 
-        printf("string_ptr then pointed to: %c\n", *string_ptr);
-
         while (match_count > 0) {
-          printf("******************************\n");
-          printf("match_count: %u\n", match_count);
-          printf("results.string_ptr: %s\n", results.string_ptr);
           *final_string_ptr = *string_ptr;
-          printf("results.string_ptr: %s\n", results.string_ptr);
-          printf("******************************\n");
 
           ++final_string_ptr;
           ++string_ptr;
@@ -168,33 +160,26 @@ struct Results find_and_replace(const char *string_ptr, const char *find_ptr, co
       ++final_string_ptr;
     }
 
-  /* printf("results.string_ptr: %p\n", results.string_ptr); */
-  /* printf("final_string_ptr: %p\n", final_string_ptr); */
-  /* printf("string_ptr: %c\n", *string_ptr); */
-
     ++string_ptr;
   }
 
   *final_string_ptr = '\0';
 
-  printf("results.string_ptr: %s\n", results.string_ptr);
-  printf("results.replace_count: %d\n", results.replace_count);
-
   return results;
 }
 
 
-/**********************************************************************************
- *                               - report_results -                               *
- *                                                                                *
- * prints results of running main program:                                        *
- *   'final_ptr' points to new string with replacements,                          *
- *   'num_replaced' indicates the number of replacement operations performed, and *
- *   'time_elapsed' indicates the CPU time elapsed across operations on input     *
- **********************************************************************************/
-void report_results(char *final_ptr, int num_replaced, clock_t time_elapsed)
+/***********************************************************************************
+ *                               - report_results -                                *
+ *                                                                                 *
+ * prints results of running main program:                                         *
+ *   'final_string_ptr' points to new string with replacements,                    *
+ *   'replace_count' indicates the number of replacement operations performed, and *
+ *   'time_elapsed' indicates the CPU time elapsed across operations on input      *
+ ***********************************************************************************/
+void report_results(struct Results results, clock_t time_elapsed)
 {
-  /* printf("string_ptr:  %s\n",  string_ptr); */
-  /* printf("find_ptr:    %s\n",    find_ptr); */
-  /* printf("replace_ptr: %s\n", replace_ptr); */
+  /* ╔╦╗╠╬╣╚╩╝║═ */
+
+  printf("\n\nfinal_string: %s\nreplacements: %i\ntime elapsed: %ld μs\n", results.string_ptr, results.replace_count, time_elapsed);
 }
