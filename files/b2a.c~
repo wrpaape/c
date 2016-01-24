@@ -33,8 +33,6 @@
 
 #define BUFFER_SIZE (16 * 1024)    /* use 16K buffers */
 
-/* char next_ascii_char(char **binary_buffer_ptr); /1* performs b2a reversion *1/ */
-
 
 int main(int argc, char *argv[])
 {
@@ -68,6 +66,7 @@ int main(int argc, char *argv[])
 
     if (read_size == 0) {
       ftruncate(file, 0);
+
       lseek(file, 0, SEEK_SET);
 
       write(file, ascii_buffer, ascii_offset);
@@ -106,25 +105,3 @@ int main(int argc, char *argv[])
 
   return 0;
 }
-
-
-/*************************************************************
- *                 - next_ascii_char -                       *
- *                                                           *
- * Reads in next 7 "bits" of reerenced by 'binary_buffer_ptr' *
- * and returns the corresponding ASCII char                  *
- *************************************************************/
-/* char next_ascii_char(char *binary_buffer_ptr) */
-/* { */
-/*   char ascii_char = 0; /1* conversion result *1/ */
-
-/*   for (int exp = 6; exp >= 0; --exp) { */
-/*     if (*binary_buffer_ptr == '1') { */
-/*       ascii_char += (1 << exp); */
-/*     } */
-    
-/*     ++binary_buffer_ptr; */
-/*   } */
-
-/*   return ascii_char; */
-/* } */
