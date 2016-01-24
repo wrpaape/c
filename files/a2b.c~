@@ -99,8 +99,6 @@ void convert(char *binary_char_ptr, char ascii_char)
 {
   unsigned int bit; /* test bit used to scan ascii_char */
 
-  /* printf("(char = %c) (short int = %hhi) (hex = %x)\n", *ascii_char, *ascii_char, *ascii_char); */
-
   for (bit = 0x80; bit > 0; bit = (bit >> 1)) {
     *binary_char_ptr = (ascii_char & bit) != 0 ? '1' : '0';
 

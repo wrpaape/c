@@ -1,6 +1,6 @@
 /*********************************************************************
  *                              - a2b -                              *
- * Converts an ASCII file to a "binary" file of ASCII "1s" and "0s". *
+ * Converts an ASCII file to a "binary" file of ASCII "1"s and "0"s. *
  *                                                                   *
  * a2b <read file> <write file>                                      *
  *********************************************************************/
@@ -98,8 +98,6 @@ int main(int argc, char *argv[])
 void convert(char *binary_char_ptr, char ascii_char)
 {
   unsigned int bit; /* test bit used to scan ascii_char */
-
-  /* printf("(char = %c) (short int = %hhi) (hex = %x)\n", *ascii_char, *ascii_char, *ascii_char); */
 
   for (bit = 0x80; bit > 0; bit = (bit >> 1)) {
     *binary_char_ptr = (ascii_char & bit) != 0 ? '1' : '0';
