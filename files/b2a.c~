@@ -38,7 +38,7 @@
 
 int main(int argc, char *argv[])
 {
-  char binary_buffer[BUFFER_SIZE]; /* buffer for binary data */
+  char binary_buffer[BUFFER_SIZE * 9]; /* buffer for binary data */
 	char ascii_buffer[BUFFER_SIZE];  /* buffer for ASCII data */
   char ascii_char;                 /* conversion result */
   int binary_offset;               /* offset from start of 'binary_buffer' */
@@ -67,13 +67,10 @@ int main(int argc, char *argv[])
     read_size = read(file, binary_buffer, sizeof(binary_buffer));
 
     if (read_size == 0) {
-      printf("writing file:\n\n");
+      ftruncate(file, 0);
+      lseek(file, 0, SEEK_SET);
 
-      ascii_buffer[ascii_offset] = '\0'; /* terminate 'ascii_buffer' */
-
-      printf("%s", ascii_buffer);
-
-      write(file, ascii_buffer, ascii_offset + 1);
+      write(file, ascii_buffer, ascii_offset);
 
       break; /* end of file */
     }
@@ -99,15 +96,6 @@ int main(int argc, char *argv[])
       }
 
       ++binary_offset; /* skip space */
-
-      /* printf("*binary_buffer_ptr: %hhi\n", *binary_buffer_ptr); */
-
-      /* ++binary_buffer_ptr; /1* skip space *1/ */
-      /* printf("*binary_buffer_ptr: %hhi\n", *binary_buffer_ptr); */
-      /* ++binary_buffer_ptr; /1* skip space *1/ */
-      /* printf("*binary_buffer_ptr: %hhi\n", *binary_buffer_ptr); */
-      /* close(file); */
-      /* return 0; */
 
       ascii_buffer[ascii_offset] = ascii_char;
       ++ascii_offset;
