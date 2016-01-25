@@ -33,6 +33,7 @@ void print_tree(Node *root);
 /* helpers */
 void gets_next_word(char *buffer, int buffer_size);
 void insert_next(Node *node, const char *next_word, int level);
+void print_next(int nodec, Node *nodev[], int padding);
 
 
 
@@ -100,25 +101,24 @@ void populate_tree(Node *root, char *buffer, int buffer_size)
 
 void print_tree(Node *root)
 {
-  struct winsize window;
-  ioctl(STDOUT_FILENO, TIOCGWINSZ, &window);
-  /* static char terminal_buffer[TERMINAL_BUFFER_SIZE]; */
-  /* char *terminal_type = getenv("TERM"); */
-  /*   if (tgetent(terminal_buffer, terminal_type) < 0) { */
-  /*     printf("\n\e[5m\e[31mERROR: COULD NOT ACCESS THE termcap DATABASE\e[0m\n"); */
-  /*     exit(8); */
-  /*   } */
+  if (root == NULL) {
+    return;
+  }
 
-  /* int width = tgetnum("co"); */
+  print_tree(root -> less_than);
+  printf("%s\n", root -> word);
+  print_tree(root -> greater_than);
+  /* struct winsize window; */
+  /* ioctl(STDOUT_FILENO, TIOCGWINSZ, &window); */
 
-  printf("root -> word = %s\n", root -> word);
-  printf("terminal width = %i\n", window.ws_col);
+  /* print_next(root, window.ws_col); */
+  /* printf("root -> word = %s\n", root -> word); */
+  /* printf("terminal width = %i\n", window.ws_col); */
 }
 
 /************************************************************************************
  *                                HELPER FUNCTIONS                                  *
  ************************************************************************************/
-
 void gets_next_word(char *buffer, int buffer_size)
 {
   printf("enter next word:\n  \e[5m>\e[25m ");
@@ -168,4 +168,9 @@ void insert_next(Node *node, const char *next_word, int level)
   }
 
   insert_next(*next_node_ptr, next_word, ++level);
+}
+
+void print_next(int nodec, Node *nodev[], int padding)
+{
+
 }
