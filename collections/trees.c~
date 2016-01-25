@@ -116,42 +116,46 @@ void gets_next_word(char *buffer, int buffer_size)
 
 void insert_next(Node *node, const char *next_word, int level)
 {
-  if (node == NULL) {
+  int comparison = strcmp(next_word, node -> word); /* alphabetical comparison */
+
+  if (comparison == 0) {
+    printf("next_word (%s) == node -> word (%s)\n", next_word, node -> word);
+    return;
+  }
+
+  Node **next_node = (comparison < 0) ? &(node -> less_than) : &(node -> greater_than);
+
+  /* if (comparison < 0) { */
+  /*   printf("next_word (%s) < node -> word (%s)\n", next_word, node -> word); */
+  /*   insert_next(node -> less_than, next_word, ++level); */
+
+  /* } else if (comparison > 0) { */
+  /*   printf("next_word (%s) > node -> word (%s)\n", next_word, node -> word); */
+  /*   insert_next(node -> greater_than, next_word, ++level); */
+
+  /* } else { */
+  /*   printf("next_word (%s) == node -> word (%s)\n", next_word, node -> word); */
+  /*   return; */
+  /* } */
+
+  if (*next_node == NULL) {
     printf("allocating memory...\n");
 
-    node = malloc(NODE_SIZE);
+    *next_node = malloc(NODE_SIZE);
 
-    if (node == NULL) {
+    if (*next_node == NULL) {
       printf("\n\e[5m\e[31mERROR OUT OF MEMORY\e[0m\n");
       exit(8);
     }
 
-    strcpy(node -> word, next_word);
-    node -> less_than    = NULL;
-    node -> greater_than = NULL;
+    strcpy((*next_node) -> word, next_word);
+    (*next_node) -> less_than    = NULL;
+    (*next_node) -> greater_than = NULL;
 
     printf("insert successful (%i levels deep)!\n", level);
 
     return;
   }
 
-  int comparison = strcmp(next_word, node -> word); /* alphabetical comparison */
-
-  if (comparison < 0) {
-    printf("next_word (%s) < node -> word (%s)\n", next_word, node -> word);
-    insert_next(node -> less_than, next_word, ++level);
-
-  } else if (comparison > 0) {
-    printf("next_word (%s) > node -> word (%s)\n", next_word, node -> word);
-    insert_next(node -> greater_than, next_word, ++level);
-
-  } else {
-    printf("next_word (%s) == node -> word (%s)\n", next_word, node -> word);
-    return;
-  }
+  insert_next(*next_node, next_word, ++level);
 }
-  /* printf("sizeof(*root) = %lu\n", sizeof(*root)); */
-  /* printf("NODE_SIZE = %lu\n", NODE_SIZE); */
-  /* printf("root -> word = %s\n", root -> word); */
-  /* fflush(stdout); */
-
