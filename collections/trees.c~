@@ -1,9 +1,15 @@
+/************************************************************************************
+ *                             PREPROCESSOR DIRECTIVES                              *
+ ************************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define BUFFER_SIZE 30 
 
+/************************************************************************************
+ *                               INITIAL DECLARATIONS                               *
+ ************************************************************************************/
 typedef struct Node {
   char word[BUFFER_SIZE - 1]; /* trimmed input */
   struct Node *less_than;     /* pointer to lesser nodes */
@@ -12,17 +18,15 @@ typedef struct Node {
 
 const unsigned int NODE_SIZE = sizeof(Node); /* used with 'malloc' to initialize new nodes */
 
-/***********************
- * TOP LEVEL FUNCTIONS *
- ***********************/
-void init_root(Node *root, char *buffer, int buffer_size); /* sets root node to user input word */
+/************************************************************************************
+ *                               FUNCTION PROTOTYPES                                *
+ ************************************************************************************/
+/* top level */
+void init_root(Node *root, char *buffer, int buffer_size);
 void populate_tree(Node *root, char *buffer, int buffer_size);
 void print_tree(Node root);
-
-/********************
- * HELPER FUNCTIONS *
- ********************/
-void gets_next_word(char *buffer, int buffer_size); /* sets 'buffer' to user input word */
+/* helpers */
+void gets_next_word(char *buffer, int buffer_size);
 void insert_next(Node *node, const char *next_word);
 
 
@@ -97,16 +101,27 @@ void gets_next_word(char *buffer, int buffer_size)
 
 void insert_next(Node *node, const char *next_word)
 {
-  int comparison; /* result of string comparison with 'next_word' */
+  printf("comparing next_word (%s) with node -> word (%s)...\n", next_word, node -> word);
+  int comparison = strcmp(next_word, node -> word); /* alphabetical comparison */
 
-  comparison = strcmp(next_word, node -> word);
+  if (comparison == 0) {
+    return; /* duplicate word, no need to create a new node */
+  }
 
-  if (comparison < 0) {
-    printf("%s < %s\n", next_word, node -> word);
-  } else if (comparison > 0) {
-    printf("%s > %s\n", next_word, node -> word);
+  Node *next_node = (comparison < 0) ? (node -> less_than) : (node -> greater_than);
+
+  if (next_node == NULL) {
+    printf("allocating memory...\n");
+    fflush(stdout);
+
+    next_node = malloc(NODE_SIZE);
+
+    strcpy(next_node -> word, next_word);
+
+    printf("insert successful!\n");
+
   } else {
-    printf("%s == %s\n", next_word, node -> word);
+    insert_next(next_node, next_word);
   }
 }
 
