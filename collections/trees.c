@@ -1,12 +1,13 @@
 /************************************************************************************
  *                             PREPROCESSOR DIRECTIVES                              *
  ************************************************************************************/
+#include <sys/ioctl.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define BUFFER_SIZE 30 
-
 /************************************************************************************
  *                               INITIAL DECLARATIONS                               *
  ************************************************************************************/
@@ -15,6 +16,10 @@ typedef struct Node {
   struct Node *less_than;     /* pointer to lesser nodes */
   struct Node *greater_than;  /* pointer to greater nodes */
 } Node;                       /* models a node in a generic tree of sorted strings */
+
+typedef struct Boolean {
+  unsigned int is_true : 1;
+} Boolean;
 
 const unsigned int NODE_SIZE = sizeof(Node); /* used with 'malloc' to initialize new nodes */
 
@@ -51,7 +56,6 @@ int main(void)
 /************************************************************************************
  *                               TOP LEVEL FUNCTIONS                                *
  ************************************************************************************/
-
 void init_root(Node *root, char *buffer, int buffer_size)
 {
   gets_next_word(buffer, buffer_size);
@@ -66,38 +70,49 @@ void init_root(Node *root, char *buffer, int buffer_size)
 }
 
 
-
-/* void populate_tree(Node *root, char *buffer, int buffer_size) */
 void populate_tree(Node *root, char *buffer, int buffer_size)
 {
+  Boolean boolean;
 
   while (1) {
+    printf("******************************\n\n");
+
+    if (boolean.is_true) {
+      printf("\e[7m");
+    }
+
     gets_next_word(buffer, BUFFER_SIZE);
 
     if (buffer[0] == '\0') {
       return;
     }
 
-    printf("root = %p\n", root);
-    printf("root -> word = %s\n", root -> word);
-    printf("root -> less_than = %p\n", root -> less_than);
-    printf("root -> greater_than = %p\n", root -> greater_than);
-    printf("***********************************************\n");
-    fflush(stdout);
+    printf("\n");
+
     insert_next(root, buffer, 0);
-    printf("***********************************************\n");
-    printf("root = %p\n", root);
-    printf("root -> word = %s\n", root -> word);
-    printf("root -> less_than = %p\n", root -> less_than);
-    printf("root -> greater_than = %p\n", root -> greater_than);
-    fflush(stdout);
+
+    printf("\e[0m\n******************************\n");
+
+    boolean.is_true = ~boolean.is_true;
   }
 }
 
 
 void print_tree(Node *root)
 {
-  printf("root -> word = %s", root -> word);
+  struct winsize window;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &window);
+  /* static char terminal_buffer[TERMINAL_BUFFER_SIZE]; */
+  /* char *terminal_type = getenv("TERM"); */
+  /*   if (tgetent(terminal_buffer, terminal_type) < 0) { */
+  /*     printf("\n\e[5m\e[31mERROR: COULD NOT ACCESS THE termcap DATABASE\e[0m\n"); */
+  /*     exit(8); */
+  /*   } */
+
+  /* int width = tgetnum("co"); */
+
+  printf("root -> word = %s\n", root -> word);
+  printf("terminal width = %i\n", window.ws_col);
 }
 
 /************************************************************************************
@@ -110,52 +125,47 @@ void gets_next_word(char *buffer, int buffer_size)
 
   fgets(buffer, BUFFER_SIZE, stdin);
 
-  buffer[strcspn(buffer, "\r\n ")] = '\0'; /* trim input */
+  buffer[strcspn(buffer, "\r\n ")] = '\0'; /* trim trailing newline from input */
 }
 
 
 void insert_next(Node *node, const char *next_word, int level)
 {
-  int comparison = strcmp(next_word, node -> word); /* alphabetical comparison */
+  int comparison;       /* integer result of alphabetical comparison 'strcomp' */
+  Node **next_node_ptr; /* pointer to nodes either greater or less than 'node' */
 
-  if (comparison == 0) {
-    printf("next_word (%s) == node -> word (%s)\n", next_word, node -> word);
+  comparison = strcmp(next_word, node -> word);
+
+  if (comparison < 0) {
+    printf("next_word (%s) < node -> word (%s)\n", next_word, node -> word);
+    next_node_ptr = &(node -> less_than);
+
+  } else if (comparison > 0) {
+    printf("next_word (%s) > node -> word (%s)\n", next_word, node -> word);
+    next_node_ptr = &(node -> greater_than);
+
+  } else {
+    printf("next_word (%s) == node -> word (%s)\nskipping duplicate!\n", next_word, node -> word);
     return;
   }
 
-  Node **next_node = (comparison < 0) ? &(node -> less_than) : &(node -> greater_than);
-
-  /* if (comparison < 0) { */
-  /*   printf("next_word (%s) < node -> word (%s)\n", next_word, node -> word); */
-  /*   insert_next(node -> less_than, next_word, ++level); */
-
-  /* } else if (comparison > 0) { */
-  /*   printf("next_word (%s) > node -> word (%s)\n", next_word, node -> word); */
-  /*   insert_next(node -> greater_than, next_word, ++level); */
-
-  /* } else { */
-  /*   printf("next_word (%s) == node -> word (%s)\n", next_word, node -> word); */
-  /*   return; */
-  /* } */
-
-  if (*next_node == NULL) {
+  if (*next_node_ptr == NULL) {
     printf("allocating memory...\n");
 
-    *next_node = malloc(NODE_SIZE);
+    *next_node_ptr = malloc(NODE_SIZE);
 
-    if (*next_node == NULL) {
-      printf("\n\e[5m\e[31mERROR OUT OF MEMORY\e[0m\n");
+    if (*next_node_ptr == NULL) {
+      printf("\n\e[5m\e[31mERROR: OUT OF MEMORY\e[0m\n");
       exit(8);
     }
 
-    strcpy((*next_node) -> word, next_word);
-    (*next_node) -> less_than    = NULL;
-    (*next_node) -> greater_than = NULL;
+    strcpy((*next_node_ptr) -> word, next_word);
+    (*next_node_ptr) -> less_than    = NULL;
+    (*next_node_ptr) -> greater_than = NULL;
 
     printf("insert successful (%i levels deep)!\n", level);
-
     return;
   }
 
-  insert_next(*next_node, next_word, ++level);
+  insert_next(*next_node_ptr, next_word, ++level);
 }
