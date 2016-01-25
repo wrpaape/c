@@ -24,10 +24,10 @@ const unsigned int NODE_SIZE = sizeof(Node); /* used with 'malloc' to initialize
 /* top level */
 void init_root(Node *root, char *buffer, int buffer_size);
 void populate_tree(Node *root, char *buffer, int buffer_size);
-void print_tree(Node root);
+void print_tree(Node *root);
 /* helpers */
 void gets_next_word(char *buffer, int buffer_size);
-void insert_next(Node *node, const char *next_word);
+void insert_next(Node *node, const char *next_word, int level);
 
 
 
@@ -36,12 +36,13 @@ void insert_next(Node *node, const char *next_word);
  ************************************************************************************/
 int main(void)
 {
-  Node root;                /* root node */
+  /* Node *root = NULL;        /1* root node *1/ */
+  Node *root;               /* root node */
   char buffer[BUFFER_SIZE]; /* input buffer */
 
-  init_root(&root, buffer, BUFFER_SIZE);
+  init_root(root, buffer, BUFFER_SIZE);
 
-  populate_tree(&root, buffer, BUFFER_SIZE);
+  populate_tree(root, buffer, BUFFER_SIZE);
 
   print_tree(root);
 
@@ -67,8 +68,10 @@ void init_root(Node *root, char *buffer, int buffer_size)
 
 
 
+/* void populate_tree(Node *root, char *buffer, int buffer_size) */
 void populate_tree(Node *root, char *buffer, int buffer_size)
 {
+
   while (1) {
     gets_next_word(buffer, BUFFER_SIZE);
 
@@ -76,14 +79,19 @@ void populate_tree(Node *root, char *buffer, int buffer_size)
       return;
     }
 
-    insert_next(root, buffer);
+    printf("root = %p", root);
+    fflush(stdout);
+    insert_next(root, buffer, 0);
+    printf("root = %p", root);
+    printf("root -> word = %s", root -> word);
+    fflush(stdout);
   }
 }
 
 
-void print_tree(Node root)
+void print_tree(Node *root)
 {
-  printf("root.word = %s", root.word);
+  printf("root -> word = %s", root -> word);
 }
 
 /************************************************************************************
@@ -100,52 +108,87 @@ void gets_next_word(char *buffer, int buffer_size)
 }
 
 
+/* void insert_next(Node *node, const char *next_word) */
+/* { */
+/*   printf("comparing next_word (%s) with node -> word (%s)...\n", next_word, node -> word); */
+/*   int comparison = strcmp(next_word, node -> word); /1* alphabetical comparison *1/ */
 
-void insert_next(Node *node, const char *next_word)
+/*   printf("comparison = %i\n", comparison); */
+
+/*   if (comparison == 0) { */
+/*     return; /1* duplicate word, no need to create a new node *1/ */
+/*   } */
+
+/*   Node *next_node = (comparison < 0) ? (node -> less_than) : (node -> greater_than); */
+/*   /1* Node *next_node = (comparison > 0) ? (node -> greater_than) : (node -> less_than); *1/ */
+
+
+
+/*     printf("NULL      = %p\n", NULL); */
+/*     printf("next_node = %p\n", next_node); */
+/*     /1* puts(NULL); *1/ */
+/*     /1* puts(&*next_node); *1/ */
+/*     fflush(stdout); */
+
+/*   if (next_node == NULL) { */
+/*     printf("allocating memory...\n"); */
+
+/*     next_node = malloc(NODE_SIZE); */
+
+/*     if (next_node == NULL) { */
+/*       printf("\n\e[5m\e[31mERROR MEMORY LEAK\e[0m\n"); */
+/*       exit(8); */
+/*     } */
+
+/*     strcpy(next_node -> word, next_word); */
+/*     next_node -> less_than    = NULL; */
+/*     next_node -> greater_than = NULL; */
+
+/*     printf("insert successful!\n"); */
+
+/*   } else { */
+/*     /1* printf("sizeof(*next_node) = %lu\n", sizeof(*next_node)); *1/ */
+/*     /1* printf("next_node -> word = %s\n", next_node -> word); *1/ */
+/*     insert_next(next_node, next_word); */
+/*   } */
+/* } */
+
+void insert_next(Node *node, const char *next_word, int level)
 {
-  printf("comparing next_word (%s) with node -> word (%s)...\n", next_word, node -> word);
-  int comparison = strcmp(next_word, node -> word); /* alphabetical comparison */
-
-  printf("comparison = %i\n", comparison);
-
-  if (comparison == 0) {
-    return; /* duplicate word, no need to create a new node */
-  }
-
-  Node *next_node = (comparison < 0) ? (node -> less_than) : (node -> greater_than);
-  /* Node *next_node = (comparison > 0) ? (node -> greater_than) : (node -> less_than); */
-
-
-
-    printf("NULL      = %p\n", NULL);
-    printf("next_node = %p\n", next_node);
-    /* puts(NULL); */
-    /* puts(&*next_node); */
-    fflush(stdout);
-
-  if (next_node == NULL) {
+  if (node == NULL) {
     printf("allocating memory...\n");
 
-    next_node = malloc(NODE_SIZE);
+    node = malloc(NODE_SIZE);
 
-    if (next_node == NULL) {
-      printf("\n\e[5m\e[31mERROR MEMORY LEAK\e[0m\n");
+    if (node == NULL) {
+      printf("\n\e[5m\e[31mERROR OUT OF MEMORY\e[0m\n");
       exit(8);
     }
 
-    strcpy(next_node -> word, next_word);
-    next_node -> less_than    = NULL;
-    next_node -> greater_than = NULL;
+    strcpy(node -> word, next_word);
+    node -> less_than    = NULL;
+    node -> greater_than = NULL;
 
-    printf("insert successful!\n");
+    printf("insert successful (%i levels deep)!\n", level);
+
+    return;
+  }
+
+  int comparison = strcmp(next_word, node -> word); /* alphabetical comparison */
+
+  if (comparison < 0) {
+    printf("next_word (%s) < node -> word (%s)\n", next_word, node -> word);
+    insert_next(node -> less_than, next_word, ++level);
+
+  } else if (comparison > 0) {
+    printf("next_word (%s) > node -> word (%s)\n", next_word, node -> word);
+    insert_next(node -> greater_than, next_word, ++level);
 
   } else {
-    /* printf("sizeof(*next_node) = %lu\n", sizeof(*next_node)); */
-    /* printf("next_node -> word = %s\n", next_node -> word); */
-    insert_next(next_node, next_word);
+    printf("next_word (%s) == node -> word (%s)\n", next_word, node -> word);
+    return;
   }
 }
-
   /* printf("sizeof(*root) = %lu\n", sizeof(*root)); */
   /* printf("NODE_SIZE = %lu\n", NODE_SIZE); */
   /* printf("root -> word = %s\n", root -> word); */
