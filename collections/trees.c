@@ -8,20 +8,21 @@
 #include <string.h>
 
 #define BUFFER_SIZE 30 
+#define MAX_WIDTH 4096
 /************************************************************************************
  *                               INITIAL DECLARATIONS                               *
  ************************************************************************************/
 typedef struct Node {
   char word[BUFFER_SIZE - 1]; /* trimmed input */
-  struct Node *less_than;     /* pointer to lesser nodes */
-  struct Node *greater_than;  /* pointer to greater nodes */
+  struct Node *less_than;     /* pointer to lesser g */
+  struct Node *greater_than;  /* pointer to greater g */
 } Node;                       /* models a node in a generic tree of sorted strings */
 
 typedef struct Boolean {
   unsigned int is_true : 1;
 } Boolean;
 
-const unsigned int NODE_SIZE = sizeof(Node); /* used with 'malloc' to initialize new nodes */
+const unsigned int NODE_SIZE = sizeof(Node); /* used with 'malloc' to initialize new g */
 
 /************************************************************************************
  *                               FUNCTION PROTOTYPES                                *
@@ -33,7 +34,7 @@ void print_tree(Node *root);
 /* helpers */
 void gets_next_word(char *buffer, int buffer_size);
 void insert_next(Node *node, const char *next_word, int level);
-void print_next(int nodec, Node *nodev[], int padding);
+void print_next(int num_nodes, Node *nodes[], int col_width);
 
 
 
@@ -73,12 +74,12 @@ void init_root(Node *root, char *buffer, int buffer_size)
 
 void populate_tree(Node *root, char *buffer, int buffer_size)
 {
-  Boolean boolean;
+  Boolean ansi_invert;
 
   while (1) {
     printf("******************************\n\n");
 
-    if (boolean.is_true) {
+    if (ansi_invert.is_true) {
       printf("\e[7m");
     }
 
@@ -94,26 +95,17 @@ void populate_tree(Node *root, char *buffer, int buffer_size)
 
     printf("\e[0m\n******************************\n");
 
-    boolean.is_true = ~boolean.is_true;
+    ansi_invert.is_true = ~ansi_invert.is_true;
   }
 }
 
 
 void print_tree(Node *root)
 {
-  if (root == NULL) {
-    return;
-  }
+  struct winsize window;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &window);
 
-  print_tree(root -> less_than);
-  printf("%s\n", root -> word);
-  print_tree(root -> greater_than);
-  /* struct winsize window; */
-  /* ioctl(STDOUT_FILENO, TIOCGWINSZ, &window); */
-
-  /* print_next(root, window.ws_col); */
-  /* printf("root -> word = %s\n", root -> word); */
-  /* printf("terminal width = %i\n", window.ws_col); */
+  print_next(1, &root, window.ws_col);
 }
 
 /************************************************************************************
@@ -132,7 +124,7 @@ void gets_next_word(char *buffer, int buffer_size)
 void insert_next(Node *node, const char *next_word, int level)
 {
   int comparison;       /* integer result of alphabetical comparison 'strcomp' */
-  Node **next_node_ptr; /* pointer to nodes either greater or less than 'node' */
+  Node **next_node_ptr; /* pointer to g either greater or less than 'node' */
 
   comparison = strcmp(next_word, node -> word);
 
@@ -170,7 +162,67 @@ void insert_next(Node *node, const char *next_word, int level)
   insert_next(*next_node_ptr, next_word, ++level);
 }
 
-void print_next(int nodec, Node *nodev[], int padding)
+void print_next(int num_nodes, Node *nodes[], int col_width)
 {
+  int off_node;             /* node offset from left */
+  int off_line;             /* char offset from 'line' start */
+  int off_rel;              /* char offset from start of each 'nodespace' */
+  int nodespace;            /* cols available for each node */
+  int word_len;             /* string length of 'node_word_ptr' */
+  int lpad_len;             /* left pad length for 'node_word_ptr' */
+  int off_word;             /* off_rel after 'node_word_ptr' */
+
+  char line[col_width + 2]; /* buffer for terminal line including \n and \0 */
+  char *line_ptr;           /* points to char at offset 'off_line' */
+  char *node_word_ptr;      /* word of node at 'nodes[off_node]' */
+
+  off_line = 0;
+  line_ptr = line;
+  nodespace = col_width / num_nodes;
+
+  for (off_node = 0; off_node < num_nodes; ++off_node) {
+    off_rel = 0;
+
+    if (nodes[off_node] == NULL) {
+      while (off_rel < nodespace) {
+        *line_ptr = ' ';
+        ++line_ptr;
+        ++off_rel;
+      }
+      continue;
+    }
+
+    node_word_ptr = nodes[off_node] -> word;
+    word_len      = strlen(node_word_ptr);
+    printf("node_word_ptr: %s\n", node_word_ptr);
+
+    lpad_len = (nodespace - word_len) / 2;
+    off_word = word_len + lpad_len;
+
+    while (off_rel < lpad_len) {
+      *line_ptr = ' ';
+      ++line_ptr;
+      ++off_rel;
+    }
+
+    while (off_rel < off_word) {
+      *line_ptr = *node_word_ptr;
+      ++line_ptr;
+      ++node_word_ptr;
+      ++off_rel;
+    }
+
+    while (off_rel < nodespace) {
+      *line_ptr = ' ';
+      ++line_ptr;
+      ++off_rel;
+    }
+  }
+
+  *line_ptr = '\n';
+  ++line_ptr;
+  *line_ptr = '\0';
+
+  printf("line: %s", line);
 
 }
