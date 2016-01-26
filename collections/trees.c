@@ -221,13 +221,13 @@ void print_next(int num_nodes, Node *nodes[], int total_column_width)
     }
   }
 
-  *line_ptr = '\0';
-  printf("%-*s", total_column_width, line);
-
   if (node_word_ptr == NULL) {
     printf("\e[0m\n\ndone!\n");
     return;
   }
+
+  *line_ptr = '\0';
+  printf("%-*s", total_column_width, line);
 
   int next_num_nodes;   /* max possible number of children nodes of current gen */
   int off_lb;           /* char offset of left branch '/' rel start of 'nodespace' */
