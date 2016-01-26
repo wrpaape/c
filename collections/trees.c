@@ -105,7 +105,7 @@ void print_tree(Node *root)
   struct winsize window;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &window);
 
-  printf("\e[0m\e[2J"); /* reset ANSI and clear window */
+  printf("\e[0m\e[2J\e[7m"); /* reset ANSI => clear window => inverse ANSI */
 
   print_next(1, &root, window.ws_col);
 }
@@ -164,14 +164,15 @@ void insert_next(Node *node, const char *next_word, int level)
   insert_next(*next_node_ptr, next_word, ++level);
 }
 
+
 void print_next(int num_nodes, Node *nodes[], int total_column_width)
 {
-  int off_node;             /* node offset from left */
-  int off_rel;              /* char offset from start of each 'nodespace' */
-  int nodespace;            /* cols available for each node */
-  int word_len;             /* string length of 'node_word_ptr' */
-  int lpad_len;             /* left pad length for 'node_word_ptr' */
-  int off_word;             /* off_rel after 'node_word_ptr' */
+  int off_node;  /* node offset from left */
+  int off_rel;   /* char offset from start of each 'nodespace' */
+  int nodespace; /* cols available for each node */
+  int word_len;  /* string length of 'node_word_ptr' */
+  int lpad_len;  /* left pad length for 'node_word_ptr' */
+  int off_word;  /* off_rel after 'node_word_ptr' */
 
   char line[total_column_width + 1]; /* buffer for terminal line including \0 */
   char *line_ptr;                    /* points to char at current line offset */
@@ -221,10 +222,10 @@ void print_next(int num_nodes, Node *nodes[], int total_column_width)
   }
 
   *line_ptr = '\0';
-  printf("%s\n", line);
+  printf("%-*s", total_column_width, line);
 
   if (node_word_ptr == NULL) {
-    printf("done!\n");
+    printf("\e[0m\n\ndone!\n");
     return;
   }
 
@@ -269,6 +270,7 @@ void print_next(int num_nodes, Node *nodes[], int total_column_width)
     *line_ptr       = (*next_nodes_ptr == NULL) ? ' ' : '/';
     ++line_ptr;
     ++next_nodes_ptr;
+    ++off_rel;
 
     while (off_rel < off_rb) {
       *line_ptr = ' ';
@@ -280,6 +282,7 @@ void print_next(int num_nodes, Node *nodes[], int total_column_width)
     *line_ptr       = (*next_nodes_ptr == NULL) ? ' ' : '\\';
     ++line_ptr;
     ++next_nodes_ptr;
+    ++off_rel;
 
     while (off_rel < nodespace) {
       *line_ptr = ' ';
@@ -289,7 +292,7 @@ void print_next(int num_nodes, Node *nodes[], int total_column_width)
   }
 
   *line_ptr = '\0';
-  printf("%s\n", line);
+  printf("%-*s", total_column_width, line);
 
   print_next(next_num_nodes, next_nodes, total_column_width);
 }
