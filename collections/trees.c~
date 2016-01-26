@@ -177,8 +177,10 @@ void print_next(int num_nodes, Node *nodes[], int total_column_width)
   char *line_ptr;                    /* points to char at current line offset */
   char *node_word_ptr;               /* word of node at 'nodes[off_node]' */
 
-  line_ptr = line;                            /* set pointer to start of buffer */
   nodespace = total_column_width / num_nodes; /* allocate nodespace */
+  line_ptr = line;                            /* set pointer to start of buffer */
+
+  node_word_ptr = NULL;
 
   for (off_node = 0; off_node < num_nodes; ++off_node) {
     off_rel = 0;
@@ -219,54 +221,75 @@ void print_next(int num_nodes, Node *nodes[], int total_column_width)
   }
 
   *line_ptr = '\0';
-
   printf("%s\n", line);
 
-  if (*node_word_ptr != NULL) {
-    int next_num_nodes;   /* max possible number of children nodes of current gen */
-    int off_lb;           /* chars from start of 'nodespace' to left branch '/' */
-    int off_rb;           /* chars from start of 'nodespace' to right branch '\' */
-    Node *next_nodes_ptr; /* points to child node at current child node offset */
+  if (node_word_ptr == NULL) {
+    printf("done!\n");
+    return;
+  }
 
-    next_num_nodes = 2 * num_nodes;
-    off_lb         = (nodespace / 3) - 1;
-    off_rb         = (2 * off_lb) + 1;
+  int next_num_nodes;   /* max possible number of children nodes of current gen */
+  int off_lb;           /* char offset of left branch '/' rel start of 'nodespace' */
+  int off_rb;           /* char offset of right branch '/' rel start of 'nodespace' */
 
-    Node *next_nodes[next_num_nodes];
-    next_nodes_ptr = next_nodes; /* set pointer to start of node buffer */
-    line_ptr = line;             /* set pointer to start of line buffer */
+  Node **next_nodes_ptr; /* points to child node at current child node offset */
 
-    off_child_node = 0;
+  next_num_nodes = 2 * num_nodes;
+  off_lb         = (nodespace / 3) - 1;
+  off_rb         = (2 * off_lb) + 1;
 
-    /* for (off_node = 0; off_node < num_nodes; ++off_node) { */
-    while(off_child_node < next_num_nodes) {
-      off_rel = 0;
+  Node *next_nodes[next_num_nodes];
+  next_nodes_ptr = next_nodes; /* set pointer to start of node buffer */
+  line_ptr = line;             /* set pointer to start of line buffer */
 
-      while (off_rel < off_lb) {
+  for (off_node = 0; off_node < num_nodes; ++off_node) {
+    off_rel = 0;
+
+    if (nodes[off_node] == NULL) {
+      while (off_rel < nodespace) {
         *line_ptr = ' ';
         ++line_ptr;
         ++off_rel;
       }
 
-      next_nodes[off_node] = nodes[off_node] -> less_than;
-
-      *line_ptr = (next_nodes[off_node] == NULL) ? ' ' : '/';
-      ++line_ptr;
-      ++off_child_node;
-
-      while (off_rel < off_rb) {
-        *line_ptr = ' ';
-        ++line_ptr;
-        ++off_rel;
-      }
-
-      next_nodes[off_node] = nodes[off_node] -> greater_than;
-
-      *line_ptr = (nodes[off_child_node] == NULL) ? ' ' : '\\';
-      ++line_ptr;
-      ++off_child_node;
+      *next_nodes_ptr = NULL;
+      ++next_nodes_ptr;
+      *next_nodes_ptr = NULL;
+      ++next_nodes_ptr;
+      continue;
     }
 
-    print_next(next_num_nodes, next_nodes, total_column_width);
+    while (off_rel < off_lb) {
+      *line_ptr = ' ';
+      ++line_ptr;
+      ++off_rel;
+    }
+
+    *next_nodes_ptr = nodes[off_node] -> less_than;
+    *line_ptr       = (*next_nodes_ptr == NULL) ? ' ' : '/';
+    ++line_ptr;
+    ++next_nodes_ptr;
+
+    while (off_rel < off_rb) {
+      *line_ptr = ' ';
+      ++line_ptr;
+      ++off_rel;
+    }
+
+    *next_nodes_ptr = nodes[off_node] -> greater_than;
+    *line_ptr       = (*next_nodes_ptr == NULL) ? ' ' : '\\';
+    ++line_ptr;
+    ++next_nodes_ptr;
+
+    while (off_rel < nodespace) {
+      *line_ptr = ' ';
+      ++line_ptr;
+      ++off_rel;
+    }
   }
+
+  *line_ptr = '\0';
+  printf("%s\n", line);
+
+  print_next(next_num_nodes, next_nodes, total_column_width);
 }
