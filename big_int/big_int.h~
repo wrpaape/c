@@ -1,5 +1,3 @@
-#define MAX_DIGITS 10
-
 enum Sign {
 	MINUS,
 	PLUS
@@ -8,11 +6,9 @@ enum Sign {
 struct BigInt {
 	enum Sign sign;
 	size_t mag;
-	unsigned int digits[MAX_DIGITS];
+	unsigned int *digits;
 };
 
-struct BigInt *new_big_int(int64_t integer);
+struct BigInt *new_big_int(long long integer);
 
-char *big_int_to_s(struct BigInt *big_int);
-
-#undef MAX_DIGITS
+char *big_int_to_s(struct BigInt *big);
