@@ -31,17 +31,19 @@ char **split_raw_string(char *restrict raw_string,
 						split_char);
 
 	HANDLE_MALLOC(split_strings,
-		      sizeof(char *) * (seg_count));
+		      sizeof(char *) * (seg_count + 1ul));
 
-	for (size_t i = 0ul; i < seg_count; ++i) {
+	split_strings[0] = raw_string;
 
-		split_strings[i] = raw_string;
+	for (size_t i = 1ul; i < seg_count; ++i) {
 
 		while (*raw_string != split_char)
 			++raw_string;
 
 		*raw_string = '\0';
 		++raw_string;
+
+		split_strings[i] = raw_string;
 	}
 
 	split_strings[seg_count] = NULL;
