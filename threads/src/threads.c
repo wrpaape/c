@@ -10,13 +10,35 @@ int main(int argc, char *argv[])
 
 void *produce_strings(void *arg)
 {
+	return NULL;
 }
 
 void *process_strings(void *arg)
 {
+	return NULL;
 }
 
 /* simple queue operations */
+void push_data(struct Queue *queue,
+	       void *data)
+{
+	struct QueueNode *node;
+
+	HANDLE_MALLOC(node, sizeof(struct QueueNode));
+
+	node->data = data;
+	node->prev = NULL;
+
+	if (queue->last == NULL) {
+		queue->next = node;
+	} else {
+		*(queue->last) = node;
+	}
+
+
+	queue->last = &(node->prev);
+}
+
 void *pop_data(struct Queue *queue)
 {
 	struct QueueNode *node = queue->next;
@@ -32,5 +54,3 @@ void *pop_data(struct Queue *queue)
 
 	return data;
 }
-
-void *pop_data(struct Queue *queue)
