@@ -22,7 +22,22 @@ void *produce_strings(void *arg)
 	return NULL;
 }
 
-void *process_strings(void *arg)
+void *scramble_strings(void *arg)
+{
+	return NULL;
+}
+
+void *unscramble_strings(void *arg)
+{
+	return NULL;
+}
+
+void *log_data(void *arg)
+{
+	return NULL;
+}
+
+void *free_data(void *arg)
 {
 	return NULL;
 }

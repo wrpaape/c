@@ -31,9 +31,35 @@ struct Queue {
 	struct QueueNode **last;
 };
 
-/* struct ProducerArg { */
-/* 	sem_t *queue_length; */
+/* struct StringSpec { */
+/* 	char *string; */
+/* 	size_t length; */
 /* }; */
+
+struct StringSpec {
+	char *segment;
+	char *spacer;
+	size_t repeat;
+};
+
+struct LogSpec {
+
+};
+
+
+struct ProducerArg {
+	sem_t *queue_length;
+	struct Queue *queue;
+	struct StringSpec *specs;
+	size_t spec_count;
+};
+
+struct ScramblerArg {
+	sem_t *queue_length;
+	struct Queue *queue;
+	struct StringSpec *specs;
+	size_t spec_count;
+};
 
 /* struct ConsumerArg { */
 /* 	sem_t *queue_length; */
@@ -68,16 +94,6 @@ void *process_strings(void *arg);
  *
  * HELPER FUNCTIONS
  * ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ */
-
-/* queue interface */
-static inline struct Queue *init_queue(void);
-
-static inline void free_queue(struct Queue *queue);
-
-static inline void push_data(struct Queue *queue,
-			     void *data);
-
-static inline void *pop_data(struct Queue *queue);
 
 /* queue interface */
 inline struct Queue *init_queue(void)
@@ -130,7 +146,6 @@ inline void *pop_data(struct Queue *queue)
 
 	return data;
 }
-
 
 /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
  * HELPER FUNCTIONS */
