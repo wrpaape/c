@@ -1,14 +1,8 @@
 #include "threads.h"
 
-/* queue interface */
-extern inline struct Queue *init_queue(void);
 
-extern inline void free_queue(struct Queue *queue);
-
-extern inline void push_data(struct Queue *queue,
-			     void *data);
-
-extern inline void *pop_data(struct Queue *queue);
+/* worker operations */
+extern inline char *produce_string(struct ProduceSpec *spec);
 
 
 int main(int argc, char *argv[])
@@ -32,13 +26,12 @@ void *unscramble_strings(void *arg)
 	return NULL;
 }
 
-void *log_data(void *arg)
-{
-	return NULL;
-}
-
 void *free_data(void *arg)
 {
 	return NULL;
 }
 
+void *log_work(void *arg)
+{
+	return NULL;
+}

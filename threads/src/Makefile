@@ -16,7 +16,7 @@ CC          = gcc
 CFLAGS      = -g -I$(SRC_DIR) -std=c99 -Wall -D__USE_FIXED_PROTOTYPES__
 AR          = ar
 ARFLAGS     = rcs
-SRC_LIBS    =
+SRC_LIBS    = queue string
 TEST_LIBS   = unity
 SRC_LFLAGS  = $(addprefix -l, $(SRC_LIBS))
 TEST_LFLAGS = $(addprefix -l, $(TEST_LIBS))

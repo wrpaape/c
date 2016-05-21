@@ -12,7 +12,8 @@ extern "C" {
  * ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ */
 
 #include <parallel/pthread.h>	/* pthread API, error handlers */
-#include <parallel/semaphore.h>	/* semaphore_wait */
+#include <parallel/semaphore.h>	/* sem_t, semaphore_wait */
+#include <queue/queue.h>	/* generic FIFO queue */
 
 /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
  * EXTERNAL DEPENDENCIES
@@ -21,45 +22,38 @@ extern "C" {
  * TYPEDEFS, ENUM AND STRUCT DEFINITIONS
  * ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ */
 
-struct QueueNode {
-	void *data;
-	struct QueueNode *prev;
+struct LogEntry {
+	char *worker;
+	char *input;
+	char *output;
+	clock_t begin;
+	clock_t complete;
 };
 
-struct Queue {
-	struct QueueNode *next;
-	struct QueueNode **last;
-};
-
-/* struct StringSpec { */
-/* 	char *string; */
-/* 	size_t length; */
-/* }; */
-
-struct StringSpec {
+struct ProduceSpec {
 	char *segment;
 	char *spacer;
 	size_t repeat;
 };
 
-struct LogSpec {
-
+struct FreeSpec {
+	void (*free_fn)(void *);
+	void *data;
 };
 
+/* struct ProduceArg { */
+/* 	sem_t *queue_length; */
+/* 	struct Queue *queue; */
+/* 	struct StringSpec *specs; */
+/* 	size_t spec_count; */
+/* }; */
 
-struct ProducerArg {
-	sem_t *queue_length;
-	struct Queue *queue;
-	struct StringSpec *specs;
-	size_t spec_count;
-};
-
-struct ScramblerArg {
-	sem_t *queue_length;
-	struct Queue *queue;
-	struct StringSpec *specs;
-	size_t spec_count;
-};
+/* struct ScrambleArg { */
+/* 	sem_t *queue_length; */
+/* 	struct Queue *queue; */
+/* 	struct StringSpec *specs; */
+/* 	size_t spec_count; */
+/* }; */
 
 /* struct ConsumerArg { */
 /* 	sem_t *queue_length; */
@@ -71,6 +65,7 @@ struct ScramblerArg {
  *
  * CONSTANTS
  * ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ */
+
 /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
  * CONSTANTS
  *
@@ -84,9 +79,16 @@ struct ScramblerArg {
  * TOP-LEVEL FUNCTIONS
  * ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ */
 
+/* worker threads */
 void *produce_strings(void *arg);
 
-void *process_strings(void *arg);
+void *scramble_strings(void *arg);
+
+void *unscramble_strings(void *arg);
+
+void *free_data(void *arg);
+
+void *log_work(void *arg);
 
 /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
  * TOP-LEVEL FUNCTIONS
@@ -95,56 +97,15 @@ void *process_strings(void *arg);
  * HELPER FUNCTIONS
  * ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ */
 
-/* queue interface */
-inline struct Queue *init_queue(void)
+/* worker operations */
+inline char *produce_string(struct ProduceSpec *spec)
 {
-	struct Queue *queue;
-	HANDLE_MALLOC(queue, sizeof(struct Queue));
+	struct ProduceSpec {
+		char **segment;
+		size_t count;
+	};
 
-	queue->next = NULL;
-	queue->last = NULL;
-
-	return queue;
-}
-
-inline void free_queue(struct Queue *queue)
-{
-	free(queue);
-}
-
-inline void push_data(struct Queue *queue,
-		      void *data)
-{
-	struct QueueNode *node;
-	HANDLE_MALLOC(node, sizeof(struct QueueNode));
-
-	node->data = data;
-	node->prev = NULL;
-
-	if (queue->last == NULL) {
-		queue->next = node;
-	} else {
-		*(queue->last) = node;
-	}
-
-
-	queue->last = &(node->prev);
-}
-
-inline void *pop_data(struct Queue *queue)
-{
-	struct QueueNode *node = queue->next;
-
-	if (node == NULL)
-		return NULL;
-
-	void *data = node->data;
-
-	queue->next = node->prev;
-
-	free(node);
-
-	return data;
+	char *buffer;
 }
 
 /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
