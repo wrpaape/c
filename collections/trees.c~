@@ -295,4 +295,4 @@ void print_next(int num_nodes, Node *nodes[], int total_column_width)
   printf("%-*s", total_column_width, line);
 
   print_next(next_num_nodes, next_nodes, total_column_width);
-}
+

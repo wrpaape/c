@@ -9,6 +9,6 @@ struct BigInt {
 	unsigned int *digits;
 };
 
-struct BigInt *new_big_int(long long integer);
+struct BigInt *new_big_int(long long sml);
 
 char *big_int_to_s(struct BigInt *big);
