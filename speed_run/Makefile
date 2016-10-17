@@ -4,10 +4,13 @@ RM		:= rm
 RM_FLAGS	:= -rf
 
 
-all: brackets
+all: brackets maze
 
 brackets: brackets.c
 	$(CC) $(C_FLAGS) $< -o $@
 
+maze: maze.c
+	$(CC) $(C_FLAGS) $< -o $@
+
 clean:
-	$(RM) $(RM_FLAGS) brackets
+	$(RM) $(RM_FLAGS) brackets maze
