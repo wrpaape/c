@@ -4,13 +4,19 @@ RM		:= rm
 RM_FLAGS	:= -rf
 
 
-all: red_black two_three_four
+all: two_three_four_test
 
-red_black: red_black.c
-	$(CC) $(C_FLAGS) $< -o $@
+# red_black: red_black.c
+# 	$(CC) $(C_FLAGS) $< -o $@
 
-two_three_four: two_three_four.c two_three_four.h
-	$(CC) $(C_FLAGS) $< -o $@
+two_three_four.o: two_three_four.c two_three_four.h
+	$(CC) $(C_FLAGS) -c $< -o $@
+
+two_three_four_test.o: two_three_four_test.c two_three_four_test.h two_three_four.h
+	$(CC) $(C_FLAGS) -c $< -o $@
+
+two_three_four_test: two_three_four_test.o two_three_four.o
+	$(CC) $(C_FLAGS) $^ -o $@
 
 clean:
-	$(RM) $(RM_FLAGS) red_black two_three_four
+	$(RM) $(RM_FLAGS) two_three_four.o two_three_four_test.o two_three_four_test

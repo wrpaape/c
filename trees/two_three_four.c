@@ -1,38 +1,74 @@
 #include "two_three_four.h"
 
-int
-compare_strings(void *value1,
-		void *value2)
+
+/* helper functions
+ * ────────────────────────────────────────────────────────────────────────── */
+static inline void
+two_three_four_alloc_init(struct TwoThreeFourAlloc *const restrict alloc)
 {
-	char token1;
-	char token2;
-	const char *restrict string1 = (const char *restrict) value1;
-	const char *restrict string2 = (const char *restrict) value2;
+	alloc->base = malloc(sizeof(struct TwoThreeFourNode));
 
-	while (1) {
-		token1 = *string1;
-		token2 = *string2;
+	if (UNLIKELY(alloc->base == NULL))
+		EXIT_ON_FAILURE("failed to malloc %zu bytes for tree",
+				sizeof(struct TwoThreeFourNode));
 
-		if (token1 != token2)
-			return token1 - token2;
+	alloc->current = alloc->base;
+	alloc->until   = alloc->current + 1l;
+	alloc->size    = sizeof(struct TwoThreeFourNode);
+}
 
-		if (token1 == '\0')
-			return 0;
+static inline void
+two_three_four_alloc_expand(struct TwoThreeFourAlloc *const restrict alloc)
+{
+	alloc->size *= 2;
 
-		++string1;
-		++string2;
+	struct TwoThreeFourNode *const restrict next_base
+	= realloc(alloc->base,
+		  alloc->size);
+
+	if (next_base != alloc->base) {
+		if (UNLIKELY(next_base == NULL)) {
+			free(alloc->base);
+			EXIT_ON_FAILURE("failed to expand alloc to %zu bytes",
+					alloc->size);
+		} else {
+			alloc->current += (next_base - alloc->base);
+			alloc->base = next_base;
+		}
 	}
+
+	alloc->until = next_base + alloc->size;
 }
 
-
-
-
-
-
-
-
-int
-main(void)
+static inline struct TwoThreeFourNode *
+two_three_four_alloc_pop(struct TwoThreeFourAlloc *const restrict alloc)
 {
-	return 0;
+	if (alloc->current == alloc->until)
+		two_three_four_alloc_expand(alloc);
+
+	struct TwoThreeFourNode *const restrict node = alloc->current;
+
+	++(alloc->current);
+
+	return node;
 }
+
+
+/* API
+ * ────────────────────────────────────────────────────────────────────────── */
+void
+two_three_four_tree_init(struct TwoThreeFourTree *const restrict tree,
+			 Comparator *const compare,
+			 Stringifier *const stringify_key,
+			 Stringifier *const stringify_value)
+{
+	tree->root	      = NULL;
+	tree->compare	      = compare;
+	tree->stringify_key   = stringify_key;
+	tree->stringify_value = stringify_value;
+
+	two_three_four_alloc_init(&tree->alloc);
+}
+
+extern inline void
+two_three_four_tree_free(struct TwoThreeFourTree *const restrict tree);
