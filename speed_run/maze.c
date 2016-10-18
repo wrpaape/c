@@ -99,9 +99,6 @@ next_moves(struct Moveset *const restrict moves,
 	next_row = current->row - 1;
 	next_col = current->col;
 
-	/* printf("next move: { row: %d, col: %d, maze: %d }\n", next_row, next_col, maze[next_row][next_col]); */
-	/* fflush(stdout); */
-
 	if ((next_row >= 0) && (maze[next_row][next_col] == 0)) {
 		cell->row = next_row;
 		cell->col = next_col;
@@ -109,8 +106,6 @@ next_moves(struct Moveset *const restrict moves,
 	}
 
 	next_row += 2;
-	/* printf("next move: { row: %d, col: %d, maze: %d }\n", next_row, next_col, maze[next_row][next_col]); */
-	/* fflush(stdout); */
 
 	if ((next_row < bounds->row) && (maze[next_row][next_col] == 0)) {
 		cell->row = next_row;
@@ -120,8 +115,6 @@ next_moves(struct Moveset *const restrict moves,
 
 	next_row = current->row;
 	--next_col;
-	/* printf("next move: { row: %d, col: %d, maze: %d }\n", next_row, next_col, maze[next_row][next_col]); */
-	/* fflush(stdout); */
 
 	if ((next_col >= 0) && (maze[next_row][next_col] == 0)) {
 		cell->row = next_row;
@@ -130,8 +123,6 @@ next_moves(struct Moveset *const restrict moves,
 	}
 
 	next_col += 2;
-	/* printf("next move: { row: %d, col: %d, maze: %d }\n", next_row, next_col, maze[next_row][next_col]); */
-	/* fflush(stdout); */
 
 	if ((next_col < bounds->col) && (maze[next_row][next_col] == 0)) {
 		cell->row = next_row;
@@ -155,11 +146,6 @@ do_min_steps(int **maze,
 
 	if (is_exit(current))
 		return 0;
-
-	/* printf("finding next_moves from: { %d, %d }\n", */
-	/*        current->row, */
-	/*        current->col); */
-	/* fflush(stdout); */
 
 	next_moves(&moves,
 		   current,
@@ -260,7 +246,7 @@ main(void)
 			  exit3.row,
 			  exit3.col);
 
-	printf("steps for maze3: %d/%d\n", steps, min_steps2);
+	printf("steps for maze3: %d/%d\n", steps, min_steps3);
 	assert(steps == min_steps3);
 	puts("passed");
 
