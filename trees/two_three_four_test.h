@@ -42,8 +42,8 @@ get_input(void);
 
 /* tree compare function */
 int
-compare_strings(void *value1,
-		void *value2);
+compare_strings(void *key1,
+		void *key2);
 
 /* tree stringify function */
 char *

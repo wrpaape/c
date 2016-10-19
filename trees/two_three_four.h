@@ -7,6 +7,7 @@
 #include <stdio.h>	/* fprintf */
 #include <errno.h>	/* errno */
 #include <string.h>	/* strerror */
+#include <stdbool.h>	/* bool */
 
 
 /* helper macros
@@ -25,22 +26,36 @@ do {									\
 	__builtin_unreachable();					\
 } while (0)
 
-#define LIKELY(BOOL)   __builtin_expect(BOOL, 1)
-#define UNLIKELY(BOOL) __builtin_expect(BOOL, 0)
+#define LIKELY(BOOL)   __builtin_expect(BOOL, true)
+#define UNLIKELY(BOOL) __builtin_expect(BOOL, false)
 
 
 
 /* typedefs, struct declarations
  * ────────────────────────────────────────────────────────────────────────── */
+typedef int
+Comparator(void *key1,
+	   void *key2);
+
+typedef char *
+StringPutter(char *restrict buffer,
+	     void *value);
+
 struct TwoThreeFourTuple {
 	void *key;
 	void *value;
 };
 
+enum TwoThreeFourNodeType {
+	TTF_TWO_NODE,
+	TTF_THREE_NODE,
+	TTF_FOUR_NODE
+};
+
 struct TwoThreeFourNode {
+	enum TwoThreeFourNodeType type;
 	struct TwoThreeFourTuple tuples[3];
 	struct TwoThreeFourNode *children[4];
-	unsigned int count_children;
 };
 
 struct TwoThreeFourAlloc {
@@ -50,33 +65,24 @@ struct TwoThreeFourAlloc {
 	size_t size;
 };
 
-typedef int
-Comparator(void *value1,
-	   void *value2);
-
-typedef char *
-Stringifier(char *restrict buffer,
-	    void *value);
-
-struct TwoThreeFourTree {
-	struct TwoThreeFourNode *root;
+struct TwoThreeFourCache {
+	struct TwoThreeFourTuple input;
 	Comparator *compare;
-	Stringifier *stringify_key;
-	Stringifier *stringify_value;
 	struct TwoThreeFourAlloc alloc;
 };
 
+struct TwoThreeFourStringifier {
+	StringPutter *put_key;
+	StringPutter *put_value;
+};
 
-/* helper functions
- * ────────────────────────────────────────────────────────────────────────── */
-static inline void
-two_three_four_alloc_init(struct TwoThreeFourAlloc *const restrict alloc);
 
-static inline void
-two_three_four_alloc_expand(struct TwoThreeFourAlloc *const restrict alloc);
+struct TwoThreeFourTree {
+	struct TwoThreeFourNode *root;
+	struct TwoThreeFourCache cache;
+	struct TwoThreeFourStringifier stringifier;
+};
 
-static inline struct TwoThreeFourNode *
-two_three_four_alloc_pop(struct TwoThreeFourAlloc *const restrict alloc);
 
 
 /* API
@@ -84,15 +90,29 @@ two_three_four_alloc_pop(struct TwoThreeFourAlloc *const restrict alloc);
 void
 two_three_four_tree_init(struct TwoThreeFourTree *const restrict tree,
 			 Comparator *const compare,
-			 Stringifier *const stringify_key,
-			 Stringifier *const stringify_value);
+			 StringPutter *const put_key,
+			 StringPutter *const put_value);
 
+void
+two_three_four_tree_insert(struct TwoThreeFourTree *const restrict tree,
+			   void *key,
+			   void *value);
+bool
+two_three_four_tree_find(struct TwoThreeFourTree *const restrict tree,
+			 void *key,
+			 void **const restrict value);
 
-inline void
-two_three_four_tree_free(struct TwoThreeFourTree *const restrict tree)
-{
-	free(tree->alloc.base);
-}
+bool
+two_three_four_tree_update(struct TwoThreeFourTree *const restrict tree,
+			   void *key,
+			   void *value);
+
+void
+two_three_four_tree_delete(struct TwoThreeFourTree *const restrict tree,
+			   void *key);
+
+void
+two_three_four_tree_free(struct TwoThreeFourTree *const restrict tree);
 
 
 

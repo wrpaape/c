@@ -9,13 +9,13 @@ main(void)
 
 /* tree compare function */
 int
-compare_strings(void *value1,
-		void *value2)
+compare_strings(void *key1,
+		void *key2)
 {
 	unsigned char token1;
 	unsigned char token2;
-	const unsigned char *restrict string1 = (const unsigned char *) value1;
-	const unsigned char *restrict string2 = (const unsigned char *) value2;
+	const unsigned char *restrict string1 = (const unsigned char *) key1;
+	const unsigned char *restrict string2 = (const unsigned char *) key2;
 
 	while (1) {
 		token1 = *string1;
