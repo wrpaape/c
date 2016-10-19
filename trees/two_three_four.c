@@ -3,18 +3,28 @@
 
 /* helper functions
  * ────────────────────────────────────────────────────────────────────────── */
+/* node block operations */
+static inline void
+node_block_init(struct TwoThreeFourNodeBlock *const restrict block)
+{
+	block->base = malloc(sizeof(struct TwoThreeFourNode));
+
+	if (UNLIKELY(block->base == NULL))
+		EXIT_ON_FAILURE("failed to malloc %zu bytes for 'block'",
+				sizeof(struct TwoThreeFourNode));
+
+	block->current = block->base;
+	block->until   = block->current + 1l;
+}
+
 /* alloc operations */
 static inline void
 alloc_init(struct TwoThreeFourAlloc *const restrict alloc)
 {
-	alloc->base = malloc(sizeof(struct TwoThreeFourNode));
+	node_block_init(&alloc->block);
 
-	if (UNLIKELY(alloc->base == NULL))
-		EXIT_ON_FAILURE("failed to malloc %zu bytes for 'alloc'",
-				sizeof(struct TwoThreeFourNode));
+	alloc->free = NULL;
 
-	alloc->current = alloc->base;
-	alloc->until   = alloc->current + 1l;
 	alloc->size    = sizeof(struct TwoThreeFourNode);
 }
 

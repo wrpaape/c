@@ -10,7 +10,7 @@ all: two_three_four_test
 # 	$(CC) $(C_FLAGS) $< -o $@
 
 two_three_four.o: two_three_four.c two_three_four.h
-	$(CC) $(C_FLAGS) -c $< -o $@
+	$(CC) $(C_FLAGS) -DPAGE_SIZE=4096 -c $< -o $@
 
 two_three_four_test.o: two_three_four_test.c two_three_four_test.h two_three_four.h
 	$(CC) $(C_FLAGS) -c $< -o $@

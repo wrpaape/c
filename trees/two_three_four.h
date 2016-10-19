@@ -58,11 +58,16 @@ struct TwoThreeFourNode {
 	struct TwoThreeFourNode *children[4];
 };
 
-struct TwoThreeFourAlloc {
+struct TwoThreeFourNodeBlock {
 	struct TwoThreeFourNode *base;
 	struct TwoThreeFourNode *current;
 	struct TwoThreeFourNode *until;
-	size_t size;
+};
+
+struct TwoThreeFourAlloc {
+	struct TwoThreeFourNodeBlock block;
+	struct TwoThreeFourNode *free;
+	struct TwoThreeFourNode *active;
 };
 
 struct TwoThreeFourCache {
