@@ -1,65 +1,107 @@
 #include "two_three_four.h"
 
+/* macro constants
+ * ────────────────────────────────────────────────────────────────────────── */
+#define SIZE_NODE_ALLOC_FLOOR						\
+(PAGE_SIZE - sizeof(struct TwoThreeFourNodeBlock))
+#define COUNT_NODE_ALLOC_FLOOR						\
+(SIZE_NODE_ALLOC_FLOOR / sizeof(struct TwoThreeFourNode))
+#define COUNT_NODE_ALLOC						\
+(COUNT_NODE_ALLOC_FLOOR + 1)
+#define SIZE_NODE_ALLOC							\
+(COUNT_NODE_ALLOC * sizeof(struct TwoThreeFourNode))
+#define SIZE_NODE_BLOCK_ALLOC						\
+(sizeof(struct TwoThreeFourNodeBlock) + SIZE_NODE_ALLOC)
 
 /* helper functions
  * ────────────────────────────────────────────────────────────────────────── */
 /* node block operations */
 static inline void
-node_block_init(struct TwoThreeFourNodeBlock *const restrict block)
+free_node_blocks(struct TwoThreeFourNodeBlock *restrict block)
 {
-	block->base = malloc(sizeof(struct TwoThreeFourNode));
+	if (block == NULL)
+		return;
 
-	if (UNLIKELY(block->base == NULL))
+	struct TwoThreeFourNodeBlock *restrict next;
+
+	while (1) {
+		next = block->link;
+
+		free(block);
+
+		if (next == NULL)
+			return;
+
+		block = next;
+	}
+}
+
+static inline void
+push_new_node_block(struct TwoThreeFourNodeBlock *restrict *const restrict head)
+{
+
+	struct TwoThreeFourNodeBlock *const restrict block
+	= malloc(SIZE_NODE_BLOCK_ALLOC);
+
+	if (UNLIKELY(block == NULL)) {
+		free_node_blocks(*head);
 		EXIT_ON_FAILURE("failed to malloc %zu bytes for 'block'",
-				sizeof(struct TwoThreeFourNode));
+				SIZE_NODE_BLOCK_ALLOC);
+	}
 
-	block->current = block->base;
-	block->until   = block->current + 1l;
+	struct TwoThreeFourNode *const restrict node_alloc
+	= (struct TwoThreeFourNode *) (block + 1l);
+
+	block->base    = node_alloc;
+	block->current = node_alloc;
+	block->until   = node_alloc + COUNT_NODE_ALLOC;
+	block->link    = *head;
+
+	*head = block;
+}
+
+static inline struct TwoThreeFourNode *
+node_block_next(struct TwoThreeFourNodeBlock *restrict *const restrict head)
+{
+	struct TwoThreeFourNode *restrict node;
+
+	struct TwoThreeFourNodeBlock *restrict block;
+
+	block = *head;
+	node  = block->current;
+
+	if (node == block->until) {
+		push_new_node_block(head);
+		block = *head;
+		node = block->current;
+	}
+
+	++(block->current);
+
+	return node;
 }
 
 /* alloc operations */
 static inline void
 alloc_init(struct TwoThreeFourAlloc *const restrict alloc)
 {
-	node_block_init(&alloc->block);
+	alloc->free   = NULL;
+	alloc->active = NULL;
 
-	alloc->free = NULL;
-
-	alloc->size    = sizeof(struct TwoThreeFourNode);
-}
-
-static inline void
-alloc_expand(struct TwoThreeFourAlloc *const restrict alloc)
-{
-	alloc->size *= 2;
-
-	struct TwoThreeFourNode *const restrict next_base
-	= realloc(alloc->base,
-		  alloc->size);
-
-	if (next_base != alloc->base) {
-		if (UNLIKELY(next_base == NULL)) {
-			free(alloc->base);
-			EXIT_ON_FAILURE("failed to expand 'alloc' to %zu bytes",
-					alloc->size);
-		} else {
-			alloc->current += (next_base - alloc->base);
-			alloc->base = next_base;
-		}
-	}
-
-	alloc->until = next_base + alloc->size;
+	push_new_node_block(&alloc->active);
 }
 
 static inline struct TwoThreeFourNode *
 alloc_pop(struct TwoThreeFourAlloc *const restrict alloc)
 {
-	if (alloc->current == alloc->until)
-		alloc_expand(alloc);
+	struct TwoThreeFourNode *restrict node;
 
-	struct TwoThreeFourNode *const restrict node = alloc->current;
+	node = alloc->free;
 
-	++(alloc->current);
+	if (node == NULL)
+		node = node_block_next(&alloc->active);
+	else
+		alloc->free = node->link;
 
 	return node;
 }
@@ -67,8 +109,14 @@ alloc_pop(struct TwoThreeFourAlloc *const restrict alloc)
 static inline void
 alloc_free(struct TwoThreeFourAlloc *const restrict alloc)
 {
-	free(alloc->base);
+	struct TwoThreeFourNodeBlock *const restrict active
+	= alloc->active;
+
+	free_node_blocks(active->link);
+
+	free(active);
 }
+
 
 /* tuple operations */
 static inline void

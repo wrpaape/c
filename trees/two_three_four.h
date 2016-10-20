@@ -56,18 +56,19 @@ struct TwoThreeFourNode {
 	enum TwoThreeFourNodeType type;
 	struct TwoThreeFourTuple tuples[3];
 	struct TwoThreeFourNode *children[4];
+	struct TwoThreeFourNode *link;
 };
 
 struct TwoThreeFourNodeBlock {
 	struct TwoThreeFourNode *base;
 	struct TwoThreeFourNode *current;
 	struct TwoThreeFourNode *until;
+	struct TwoThreeFourNodeBlock *link;
 };
 
 struct TwoThreeFourAlloc {
-	struct TwoThreeFourNodeBlock block;
 	struct TwoThreeFourNode *free;
-	struct TwoThreeFourNode *active;
+	struct TwoThreeFourNodeBlock *active;
 };
 
 struct TwoThreeFourCache {
