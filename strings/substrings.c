@@ -121,6 +121,11 @@ print_matches(const unsigned char *const restrict substring,
 				     length_substring);
 			WRITE_OUTPUT_LITERAL("\n");
 		}
+		/* } else { */
+		/* 	printf("string: %.*s (%llu), substring: %.*s (%llu)\n", */
+		/* 	       (int) length_substring, string, hash_string, */
+		/* 	       (int) length_substring, substring, hash_substring); */
+		/* } */
 
 	} while (update_hash(&hash_string,
 			     lead_coeff,
@@ -129,14 +134,118 @@ print_matches(const unsigned char *const restrict substring,
 }
 
 int
-main(int argc,
-     char *argv[])
+fetch_strings(const unsigned char *restrict *const restrict substring_ptr,
+	      const unsigned char *restrict *const restrict string_ptr)
 {
-	if (argc == 3)
-		print_matches((const unsigned char *) argv[1],
-			      (const unsigned char *) argv[2]);
-	else
-		WRITE_OUTPUT_LITERAL("substrings <substring> <string>\n");
+	int file;
+	struct stat stat_buffer;
 
+	file = open("substrings_substring.txt",
+		    O_RDONLY);
+
+	if (UNLIKELY(file < 0)) {
+		WRITE_OUTPUT_LITERAL("open(substrings_substring.txt) failed\n");
+		return 1;
+	}
+
+	if (UNLIKELY(fstat(file,
+			   &stat_buffer) < 0)) {
+		(void) close(file);
+		WRITE_OUTPUT_LITERAL("fstat(substring_file) failed\n");
+		return 1;
+	}
+
+
+	unsigned char *const restrict substring
+	= malloc(stat_buffer.st_size);
+
+	if (UNLIKELY(substring == NULL)) {
+		(void) close(file);
+		WRITE_OUTPUT_LITERAL("malloc(substring) failed\n");
+		return 1;
+	}
+
+	if (UNLIKELY(read(file,
+			  substring,
+			  stat_buffer.st_size) < 0)) {
+		free(substring);
+		(void) close(file);
+		WRITE_OUTPUT_LITERAL("read(substring_file) failed\n");
+		return 1;
+	}
+
+	if (UNLIKELY(close(file) < 0)) {
+		free(substring);
+		WRITE_OUTPUT_LITERAL("close(substring_file) failed\n");
+		return 1;
+	}
+
+
+	file = open("substrings_string.txt",
+		    O_RDONLY);
+
+	if (UNLIKELY(file < 0)) {
+		free(substring);
+		WRITE_OUTPUT_LITERAL("open(substrings_string.txt) failed\n");
+		return 1;
+	}
+
+	if (UNLIKELY(fstat(file,
+			   &stat_buffer) < 0)) {
+		free(substring);
+		(void) close(file);
+		WRITE_OUTPUT_LITERAL("fstat(string_file) failed\n");
+		return 1;
+	}
+
+	unsigned char *const restrict string
+	= malloc(stat_buffer.st_size);
+
+	if (UNLIKELY(string == NULL)) {
+		free(substring);
+		(void) close(file);
+		WRITE_OUTPUT_LITERAL("malloc(string) failed\n");
+		return 1;
+	}
+
+	if (UNLIKELY(read(file,
+			  string,
+			  stat_buffer.st_size) < 0)) {
+		free(substring);
+		free(string);
+		(void) close(file);
+		WRITE_OUTPUT_LITERAL("read(string_file) failed\n");
+		return 1;
+	}
+
+	if (UNLIKELY(close(file) < 0)) {
+		free(substring);
+		free(string);
+		WRITE_OUTPUT_LITERAL("close(string_file) failed\n");
+		return 1;
+	}
+
+	*substring_ptr = substring;
+	*string_ptr    = string;
 	return 0;
+}
+
+int
+main(void)
+{
+	const unsigned char *substring;
+	const unsigned char *string;
+
+	const int exit_status = fetch_strings(&substring,
+					      &string);
+
+	if (exit_status == 0) {
+		print_matches(substring,
+			      string);
+
+		free((void *) substring);
+		free((void *) string);
+	}
+
+	return exit_status;
 }

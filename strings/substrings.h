@@ -8,9 +8,14 @@
 #include <errno.h>	/* errno */
 #include <string.h>	/* strerror */
 #include <stdbool.h>	/* bool */
-#include <unistd.h>	/* write, size_t */
+#include <sys/types.h>	/* read */
+#include <sys/uio.h>	/* read */
+#include <unistd.h>	/* read, write, close, size_t */
 #include <stdint.h>	/* uint64_t */
+#include <fcntl.h>	/* open */
+#include <sys/stat.h>	/* fstat */
 #include <limits.h>	/* UCHAR_MAX */
+#include <assert.h>	/* assert */
 
 
 /* helper macros
