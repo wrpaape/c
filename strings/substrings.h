@@ -10,6 +10,7 @@
 #include <stdbool.h>	/* bool */
 #include <unistd.h>	/* write, size_t */
 #include <stdint.h>	/* uint64_t */
+#include <limits.h>	/* UCHAR_MAX */
 
 
 /* helper macros
