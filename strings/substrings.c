@@ -120,12 +120,11 @@ print_matches(const unsigned char *const restrict substring,
 			WRITE_OUTPUT(string,
 				     length_substring);
 			WRITE_OUTPUT_LITERAL("\n");
-		}
 		/* } else { */
 		/* 	printf("string: %.*s (%llu), substring: %.*s (%llu)\n", */
 		/* 	       (int) length_substring, string, hash_string, */
 		/* 	       (int) length_substring, substring, hash_substring); */
-		/* } */
+		}
 
 	} while (update_hash(&hash_string,
 			     lead_coeff,

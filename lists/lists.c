@@ -63,7 +63,6 @@ reverse_nodes(struct Node *restrict *const restrict head)
 static inline void
 print_list(struct Node *restrict node)
 {
-
 	if (node == NULL) {
 		puts("{}");
 		return;
