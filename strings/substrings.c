@@ -133,6 +133,56 @@ print_matches(const unsigned char *const restrict substring,
 			     &string_next));
 }
 
+static inline size_t
+string_length(const unsigned char *const restrict string)
+{
+	const unsigned char *restrict ptr = string;
+
+	while (*ptr != '\0')
+		++ptr;
+
+	return ptr - string;
+}
+
+static inline bool
+is_substring(const unsigned char *restrict substring,
+	     const unsigned char *restrict string)
+{
+	while (1) {
+		if (*substring == '\0')
+			return true;
+
+		if (*string != *substring)
+			return false;
+
+
+		++string;
+		++substring;
+	}
+}
+
+static inline void
+print_matches_naive(const unsigned char *const restrict substring,
+		    const unsigned char *restrict string)
+{
+
+	const size_t length_substring = string_length(substring);
+
+	if (length_substring == 0)
+		return;
+
+	while (*string != '\0') {
+		if (is_substring(substring,
+				 string)) {
+			WRITE_OUTPUT(string,
+				     length_substring);
+			WRITE_OUTPUT_LITERAL("\n");
+		}
+
+		++string;
+	}
+}
+
 int
 fetch_strings(const unsigned char *restrict *const restrict substring_ptr,
 	      const unsigned char *restrict *const restrict string_ptr)
@@ -242,6 +292,8 @@ main(void)
 	if (exit_status == 0) {
 		print_matches(substring,
 			      string);
+		/* print_matches_naive(substring, */
+		/* 		    string); */
 
 		free((void *) substring);
 		free((void *) string);
