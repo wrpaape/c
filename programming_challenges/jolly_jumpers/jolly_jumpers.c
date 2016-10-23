@@ -1,113 +1,141 @@
-#include <stdlib.h>	/* malloc, free, perror */
-#include <stdio.h>	/* puts */
-#include <errno.h>	/* errno */
-#include <limits.h>	/* INT_MAX */
+#include <unistd.h>	/* write */
+#include <stdbool.h>	/* bool */
+#include <stdlib.h>	/* strtol */
 
-int
-string_to_integer(int *const restrict value_ptr,
+/* '0'..'9' → 0..9 */
+#define ASCII_TO_DIGIT(ASCII) ((ASCII) & 15u)
+
+#define WRITE_OUTPUT_LINE(OUTPUT)					\
+(void) write(STDOUT_FILENO,						\
+	     OUTPUT "\n",						\
+	     sizeof(OUTPUT))
+
+static inline bool
+string_to_integer(int *const restrict integer,
+		  const char *restrict string)
+__attribute__((always_inline));
+
+static inline bool
+string_to_integer(int *const restrict integer,
 		  const char *restrict string)
 {
-	const long value = strtol(string,
-				  NULL,
-				  10);
+	strtol
+	/* int val0; */
+	/* int val1; */
+	/* int val2; */
+	/* int val3; */
+	/* int token; */
 
-	const int status = ((value == 0) && (errno != 0))
-			|| (value > INT_MAX);
+	/* token = (int) *string; */
 
-	if (!status)
-		*value_ptr = (int) value;
+	/* if (token == '-') { */
+	/* 	++string; */
+	/* 	token = (int) *string; */
+	/* 	val0  = -1; */
+	/* } else { */
+	/* 	val0 = 1; */
+	/* } */
 
-	return status;
+	/* val0 *= ASCII_TO_DIGIT(token); */
+
+	/* ++string; */
+	/* token = (int) *string; */
+
+	/* if (token == 0) { */
+	/* 	*integer = val0; */
+	/* 	return true; */
+	/* } */
+
+	/* val1 = ASCII_TO_DIGIT(token); */
+
+	/* ++string; */
+	/* token = (int) *string; */
+
+	/* if (token == 0) { */
+	/* 	*integer = (val0 * 10) + val1; */
+	/* 	return true; */
+	/* } */
+
+	/* val2 = ASCII_TO_DIGIT(token); */
+
+	/* ++string; */
+	/* token = (int) *string; */
+
+	/* if (token == 0) { */
+	/* 	*integer = (val0 * 100) + (val1 * 10) + val2; */
+	/* 	return true; */
+	/* } */
+
+	/* const bool success = ((val0 < 3) && (string[1] == '\0')); */
+
+	/* if (success) { */
+	/* 	val3 = ASCII_TO_DIGIT(token); */
+	/* 	*integer = (val0 * 1000) + (val1 * 100) + (val2 * 10) + val3; */
+	/* } */
+
+	/* return success; */
 }
-
-int
-args_to_integers(const int *restrict *const restrict integers_ptr,
-		 char **args,
-		 const unsigned int count)
-{
-	int status;
-	int *restrict integer;
-
-	integer = malloc(sizeof(int) * count);
-
-	status = (integer == NULL);
-
-	if (!status) {
-		*integers_ptr = integer;
-
-		const int *const restrict until = integer + count;
-
-		while (1) {
-			status = string_to_integer(integer,
-						   *args);
-
-			if (status)
-				break;
-
-			++integer;
-
-			if (integer == until)
-				break;
-
-			++args;
-		}
-	}
-
-	return status;
-}
-
-int
-is_jolly_jumper(const int *restrict integer,
-		const unsigned int count)
-{
-	unsigned int abs_diff;
-	const int *restrict next;
-
-	const int *const restrict until = integer + count;
-
-	while (1) {
-		next = integer + 1;
-
-		if (next == until)
-			return 1;
-
-		abs_diff = (unsigned int) abs(*next - *integer);
-
-		if ((abs_diff == 0) || (abs_diff >= count))
-			return 0;
-
-		integer = next;
-	}
-}
-
 
 int
 main(int argc,
-     char *argv[])
+     char **argv)
 {
-	const int *restrict integers;
+	bool *restrict diff_ptr;
+	char *restrict *restrict from;
+	int integer;
+	int next;
+	unsigned int diff;
 
-	if (argc < 4) {
-		puts("Jolly");
+	static bool diff_set[3000] = {
+		[0] = true
+	};
+
+
+	from = argv + 2;
+
+	const unsigned int count = argc - 2;
+
+	char *restrict *const restrict until = from + count;
+
+	if (!string_to_integer(&integer,
+			       *from)) {
+		WRITE_OUTPUT_LINE("Not jolly");
 		return 0;
 	}
 
-	const unsigned int count = argc - 2u;
 
-	const int exit_status = args_to_integers(&integers,
-						 &argv[2],
-						 count);
+	while (1) {
+		++from;
 
-	if (exit_status) {
-		perror("args_to_integers failure");
+		if (from == until) {
+			WRITE_OUTPUT_LINE("Jolly");
+			return 0;
+		}
 
-	} else {
-		puts(is_jolly_jumper(integers,
-				     count) ? "Jolly" : "Not jolly");
+		if (!string_to_integer(&next,
+				       *from)) {
+			WRITE_OUTPUT_LINE("Not jolly");
+			return 0;
+		}
 
-		free((void *) integers);
+		diff = (next > integer)
+		     ? (next - integer)
+		     : (integer - next);
+
+		if (diff >= count) {
+			WRITE_OUTPUT_LINE("Not jolly");
+			return 0;
+		}
+
+		diff_ptr = &diff_set[diff];
+
+		if (*diff_ptr) {
+			WRITE_OUTPUT_LINE("Not jolly");
+			return 0;
+		}
+
+		*diff_ptr = true;
+
+		integer = next;
 	}
-
-
-	return exit_status;
 }
