@@ -1,16 +1,17 @@
 #include <unistd.h>	/* write */
 #include <stdbool.h>	/* bool */
-#include <stdlib.h>	/* strtol */
-#include <stdio.h>	/* getline */
+#include <stdlib.h>	/* strtol, exit */
+#include <stdio.h>	/* fgets */
 #include <limits.h>	/* UCHAR_MAX */
 #include <stddef.h>	/* uint64_t */
 
 
 /* macro constants
  * ────────────────────────────────────────────────────────────────────────── */
-#define LINE_LENGTH_MAX	80
-#define WORD_LENGTH_MAX	16
-#define DICT_COUNT_MAX	1000
+#define LINE_CHAR_COUNT_MAX	80
+#define LINE_SIZE_MAX		(LINE_CHAR_COUNT_MAX + 2) /* \n \0 */
+#define WORD_LENGTH_MAX		16
+#define MAP_COUNT_MAX		1000
 
 #ifndef UINT64_MAX
 #	error uint64_t not supported
@@ -29,10 +30,26 @@ struct Word {
 	const char *restrict until;
 };
 
-struct DictNode {
-	uint64_t key;
-	struct Word value;
+struct MapEntry {
+	struct Word word;
+	struct MapEntry *peer;
 };
+
+struct MapNode {
+	uint64_t key;
+	struct MapEntry *matches;
+	struct MapNode *next;
+};
+
+
+/* global variables
+ * ────────────────────────────────────────────────────────────────────────── */
+#define NORMAL_MAP_LENGTH 1024
+#define NORMAL_MAP_INDEX(KEY) (KEY & 1023)
+
+static struct MapNode *normal_map[NORMAL_MAP_LENGTH];
+
+
 
 
 /* helpful macros
@@ -42,10 +59,22 @@ struct DictNode {
 	     &STRING,							\
 	     10)
 
+static inline void
+exit_on_failure(const char *const restrict failure)
+__attribute__((noreturn));
 
+static inline void
+exit_on_failure(const char *const restrict failure)
+{
+	perror(failure);
+	exit(1);
+}
+
+
+/* hash string of upto 16 chars long according to normalized sequence */
 static inline uint64_t
-dict_key_create(const char *restrict from,
-		const char *const restrict until)
+map_key_create(const char *restrict from,
+	       const char *const restrict until)
 {
 	int *restrict normal;
 	int unique_count;
@@ -75,43 +104,128 @@ dict_key_create(const char *restrict from,
 			++unique_count;
 		}
 
-		printf("normal: %d (%c), shift: %u, shifted: %#017llX\n",
-		       *normal, *from, shift, ((uint64_t) *normal) << shift);
-
 		key |= (((uint64_t) *normal) << shift);
 
 		shift += 4;
 	}
 }
 
-
-static inline struct DictNode *
-pop_dict_node(void)
+static inline void
+word_init(struct Word *const restrict word,
+	  const char *restrict line,
+	  const char *const restrict until)
 {
-	static struct DictNode nodes[DICT_COUNT_MAX];
-	static struct DictNode *restrict head = &nodes[0];
+	char *restrict word_from;
 
-	struct DictNode *const restrict node = head;
+	word_from = &word->buffer[0];
 
-	++head;
+	do {
+		*word_from = *from;
+		++word_from;
+		++from;
+	} while (from < until);
 
-	return node;
+	word->until = word_from;
+}
+
+static inline void
+normal_map_insert(const char *restrict from,
+		  const char *restrict until)
+{
+	static struct MapEntry map_entries[MAP_COUNT_MAX];
+	static struct MapEntry *restrict map_entry_alloc = &map_entries[0];
+
+	static struct MapNode map_nodes[MAP_COUNT_MAX];
+	static struct MapNode *restrict map_node_alloc = &map_nodes[0];
+
+
+	struct MapNode *restrict node;
+	struct MapNode *restrict *restrict node_ptr;
+
+	struct MapEntry *const restrict entry = map_entry_alloc;
+	++map_entry_alloc;
+
+	word_init(&entry->word,
+		  from,
+		  until);
+
+	const uint64_t key = map_key_create(from,
+					    until);
+
+	node_ptr = &normal_map[NORMAL_MAP_INDEX(key)];
+
+	while (1) {
+		node = *node_ptr;
+
+		/* new top-level node */
+		if (node == NULL) {
+			node = map_node_alloc;
+			++map_node_alloc;
+
+			*node_ptr = node;
+
+			node->key     = key;
+			node->matches = entry;
+			return;
+		}
+
+		/* push into list of matches */
+		if (node->key == key) {
+			entry->peer   = node->matches;
+			node->matches = entry;
+			return;
+		}
+
+		/* hash collision */
+		node_ptr = &node->next;
+	}
+}
+
+
+static inline const struct MapEntry *
+normal_map_find(const char *restrict from,
+		const char *restrict until)
+{
+
+	const uint64_t key = map_key_create(from,
+					    until);
+
+	struct MapNode *restrict node;
+
+	node = normal_map[NORMAL_MAP_INDEX(key)];
+
+	while (1) {
+		if (node == NULL)
+			return NULL;
+
+		if (node->key == key)
+			return node->matches;
+
+		node = node->next;
+	}
 }
 
 
 
 static inline void
-cipher_init(char *const restrict cipher)
+cipher_copy(char *const restrict cipher1,
+	    const char *const restrict cipher2)
 {
 	struct CipherBuffer {
 		char _bytes[26];
 	};
 
-	static const struct CipherBuffer unset = {
-		._bytes = { '\0' }
-	};
+	*((struct CipherBuffer *const restrict) cipher1)
+	= *((struct CipherBuffer *const restrict) cipher2);
+}
 
-	*((struct CipherBuffer *const restrict) cipher) = unset;
+static inline void
+cipher_init(char *const restrict cipher)
+{
+	static const char unset[26];
+
+	cipher_copy(cipher,
+		    &unset[0]);
 }
 
 
@@ -143,36 +257,82 @@ cipher_update(char *const restrict cipher,
 	}
 }
 
-int
-main(void)
+
+static inline void
+print_asterisks(char *const restrict line)
 {
-	char *test = "abcdefghijklmnop";
-	char *until = test + 16;
+	char *restrict ptr;
 
-	uint64_t key = dict_key_create(test,
-				       until);
+	ptr = line;
 
-	printf("key: %llX (%llu)\n", key, key);
+	while (1) {
+		switch (*ptr) {
+		case ' ':
+			break;
 
-	return 0;
+		case '\n':
+			++ptr;
+
+			if (write(STDOUT_FILENO,
+				  line,
+				  ptr - line) < 0)
+				exit_on_failure("write");
+
+			return;
+
+		default:
+			*ptr = '*';
+		}
+
+		++ptr;
+	}
 }
+
 
 
 
 /* int */
 /* main(void) */
 /* { */
-/* 	char *line; */
-/* 	size_t capacity; */
+/* 	char *test; */
+/* 	uint64_t key; */
 
-/* 	line	 = NULL; */
-/* 	capacity = 0; */
+/* 	test = "stuff"; */
 
-/* 	while (getline(&line, */
-/* 		       &capacity, */
-/* 		       stdin) > 0) */
-/* 		puts(is_jolly_jumper(line) ? "Jolly" : "Not jolly"); */
+/* 	key = map_key_create(test, */
+/* 			     test + 5); */
 
-/* 	free(line); */
+/* 	printf("key: %llX (%llu)\n", key, key); */
+
+/* 	test = "grass"; */
+
+/* 	key = map_key_create(test, */
+/* 			     test + 5); */
+
+/* 	printf("key: %llX (%llu)\n", key, key); */
+
+/* 	print_asterisks(&string[0]); */
+
 /* 	return 0; */
 /* } */
+
+
+
+int
+main(void)
+{
+	char line[LINE_SIZE_MAX];
+	long rem_words;
+
+	if (fgets(&line[0],
+		  LINE_SIZE_MAX,
+		  stdin) == NULL)
+		exit_on_failure("fgets");
+
+
+	rem_words = strtol(&line[0],
+			   NULL)
+
+
+	return 0;
+}
