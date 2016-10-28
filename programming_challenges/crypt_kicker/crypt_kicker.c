@@ -4,6 +4,7 @@
 #include <stdio.h>	/* fgets */
 #include <limits.h>	/* UCHAR_MAX */
 #include <stddef.h>	/* uint64_t */
+#include <errno.h>	/* errno */
 
 
 /* macro constants
@@ -11,7 +12,7 @@
 #define LINE_CHAR_COUNT_MAX	80
 #define LINE_SIZE_MAX		(LINE_CHAR_COUNT_MAX + 2) /* \n \0 */
 #define WORD_LENGTH_MAX		16
-#define MAP_COUNT_MAX		1000
+#define WORD_COUNT_MAX		1000
 
 #ifndef UINT64_MAX
 #	error uint64_t not supported
@@ -68,6 +69,7 @@ exit_on_failure(const char *const restrict failure)
 {
 	perror(failure);
 	exit(1);
+	__builtin_unreachable();
 }
 
 
@@ -112,7 +114,7 @@ map_key_create(const char *restrict from,
 
 static inline void
 word_init(struct Word *const restrict word,
-	  const char *restrict line,
+	  const char *restrict from,
 	  const char *const restrict until)
 {
 	char *restrict word_from;
@@ -132,10 +134,10 @@ static inline void
 normal_map_insert(const char *restrict from,
 		  const char *restrict until)
 {
-	static struct MapEntry map_entries[MAP_COUNT_MAX];
+	static struct MapEntry map_entries[WORD_COUNT_MAX];
 	static struct MapEntry *restrict map_entry_alloc = &map_entries[0];
 
-	static struct MapNode map_nodes[MAP_COUNT_MAX];
+	static struct MapNode map_nodes[WORD_COUNT_MAX];
 	static struct MapNode *restrict map_node_alloc = &map_nodes[0];
 
 
@@ -219,15 +221,6 @@ cipher_copy(char *const restrict cipher1,
 	= *((struct CipherBuffer *const restrict) cipher2);
 }
 
-static inline void
-cipher_init(char *const restrict cipher)
-{
-	static const char unset[26];
-
-	cipher_copy(cipher,
-		    &unset[0]);
-}
-
 
 static inline bool
 cipher_update(char *const restrict cipher,
@@ -257,6 +250,19 @@ cipher_update(char *const restrict cipher,
 	}
 }
 
+static inline void
+print_buffer(char *const restrict buffer,
+	     const size_t size)
+{
+	if (write(STDOUT_FILENO,
+		  buffer,
+		  size) >= 0)
+		return;
+
+	exit_on_failure("write");
+	__builtin_unreachable();
+}
+
 
 static inline void
 print_asterisks(char *const restrict line)
@@ -272,11 +278,8 @@ print_asterisks(char *const restrict line)
 
 		case '\n':
 			++ptr;
-
-			if (write(STDOUT_FILENO,
-				  line,
-				  ptr - line) < 0)
-				exit_on_failure("write");
+			print_buffer(line,
+				     ptr - line);
 
 			return;
 
@@ -316,23 +319,162 @@ print_asterisks(char *const restrict line)
 /* 	return 0; */
 /* } */
 
+static inline bool
+fetch_line(char *const restrict line,
+	   const int size_max)
+{
+	if (fgets(line,
+		  size_max,
+		  stdin) != NULL)
+		return true;
+
+	if (feof(stdin))
+		return false;
+
+	exit_on_failure("fetch_line");
+	__builtin_unreachable();
+}
+
+
+static inline const char *
+fetch_line_until(char *restrict line,
+		 const int size_max)
+{
+	if (!fetch_line(line,
+			size_max))
+		return NULL;
+
+
+	while (*line != '\n')
+		++line;
+
+	return line;
+}
+
+static inline int
+fetch_word_count(const char *const restrict line)
+{
+	long word_count;
+
+	word_count = strtol(line,
+			    NULL,
+			    10);
+
+
+	if (word_count > 0) {
+		if (word_count <= WORD_COUNT_MAX)
+			return (int) word_count;
+
+	} else if (word_count == 0) {
+		if (errno == 0)
+			return 0;
+	}
+
+	exit_on_failure("unexpected word_count");
+	__builtin_unreachable();
+}
+
+const char *
+decrypt_next(char *restrict from,
+	     char *const restrict base_cipher)
+{
+	const struct MapEntry *restrict match;
+	char *restrict until;
+	const char *restrict line_until;
+	char next_cipher[26];
+
+	while (1) {
+		switch (*from) {
+		case ' ':
+			++from;
+			continue;	/* skip spaces */
+
+		case '\n':
+			++from;
+			return from;	/* successfully decrypted line */
+
+		default: /* do nothing */;
+		}
+		break;
+	}
+
+	until = from + 1l;
+
+	while (   (*until >= 'a')
+	       && (*until <= 'z'))
+		++until;
+
+	match = normal_map_find(from,
+				until);
+
+	while (1) {
+		if (match == NULL)
+			return NULL;
+
+
+		cipher_copy(&next_cipher[0],
+			    base_cipher);
+
+		if (cipher_update(&next_cipher[0],
+				  &match->word,
+				  from)) {
+			line_until = decrypt_next(until,
+						  &next_cipher[0]);
+
+			if (line_until != NULL)
+				return line_until;
+		}
+
+		match = match->peer;
+	}
+}
+
+static inline void
+decrypt_line(char *const restrict line)
+{
+	char cipher[26];
+
+	const char *const restrict until = decrypt_next(line,
+							&cipher[0]);
+
+	if (until == NULL)
+		print_asterisks(line);
+	else
+		print_buffer(line,
+			     until - line);
+}
 
 
 int
 main(void)
 {
 	char line[LINE_SIZE_MAX];
-	long rem_words;
+	const char *restrict until;
+	int rem_words;
 
-	if (fgets(&line[0],
-		  LINE_SIZE_MAX,
-		  stdin) == NULL)
-		exit_on_failure("fgets");
+	if (!fetch_line(&line[0],
+			LINE_SIZE_MAX))
+		exit_on_failure("no word_count");
 
+	rem_words = fetch_word_count(line);
 
-	rem_words = strtol(&line[0],
-			   NULL)
+	while (rem_words > 0) {
+		--rem_words;
 
+		until = fetch_line_until(&line[0],
+					 LINE_SIZE_MAX);
+
+		if (until == NULL)
+			exit_on_failure("expected more words");
+
+		if (until != &line[0])
+			normal_map_insert(&line[0],
+					  until);
+	}
+
+	while (fetch_line(&line[0],
+			  LINE_SIZE_MAX))
+			decrypt_line(&line[0]);
 
 	return 0;
 }
