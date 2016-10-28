@@ -131,6 +131,24 @@ word_init(struct Word *const restrict word,
 }
 
 static inline void
+word_copy(char *restrict buffer,
+	  const struct Word *const restrict word)
+{
+	const char *restrict from	 = &word->buffer[0];
+	const char *const restrict until = word->until;
+
+	while (1) {
+		*buffer = *from;
+		++from;
+
+		if (from == until)
+			return;
+
+		++buffer;
+	}
+}
+
+static inline void
 normal_map_insert(const char *restrict from,
 		  const char *restrict until)
 {
@@ -239,7 +257,6 @@ cipher_update(char *const restrict cipher,
 			*cipher_ptr = *encrypted;
 		else if (*cipher_ptr != *encrypted)
 			return false;
-
 
 		++word_from;
 
@@ -408,6 +425,8 @@ decrypt_next(char *restrict from,
 				until);
 
 	while (1) {
+		/* printf("found match for '%.*s': %s\n", */
+		/*        (int) (until - from), from, (match == NULL) ? "NULL" : &match->word.buffer[0]); */
 		if (match == NULL)
 			return NULL;
 
@@ -421,8 +440,11 @@ decrypt_next(char *restrict from,
 			line_until = decrypt_next(until,
 						  &next_cipher[0]);
 
-			if (line_until != NULL)
+			if (line_until != NULL) {
+				word_copy(from,
+					  &match->word);
 				return line_until;
+			}
 		}
 
 		match = match->peer;
@@ -432,7 +454,7 @@ decrypt_next(char *restrict from,
 static inline void
 decrypt_line(char *const restrict line)
 {
-	char cipher[26];
+	static char cipher[26];
 
 	const char *const restrict until = decrypt_next(line,
 							&cipher[0]);
