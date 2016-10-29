@@ -3,7 +3,7 @@
 #include <stdlib.h>	/* strtol, exit */
 #include <stdio.h>	/* fgets */
 #include <limits.h>	/* UCHAR_MAX */
-#include <stddef.h>	/* uint64_t */
+#include <stdint.h>	/* uint64_t */
 #include <errno.h>	/* errno */
 
 
@@ -236,7 +236,7 @@ cipher_copy(char *const restrict cipher1,
 	};
 
 	*((struct CipherBuffer *const restrict) cipher1)
-	= *((struct CipherBuffer *const restrict) cipher2);
+	= *((const struct CipherBuffer *const restrict) cipher2);
 }
 
 
@@ -308,34 +308,6 @@ print_asterisks(char *const restrict line)
 	}
 }
 
-
-
-
-/* int */
-/* main(void) */
-/* { */
-/* 	char *test; */
-/* 	uint64_t key; */
-
-/* 	test = "stuff"; */
-
-/* 	key = map_key_create(test, */
-/* 			     test + 5); */
-
-/* 	printf("key: %llX (%llu)\n", key, key); */
-
-/* 	test = "grass"; */
-
-/* 	key = map_key_create(test, */
-/* 			     test + 5); */
-
-/* 	printf("key: %llX (%llu)\n", key, key); */
-
-/* 	print_asterisks(&string[0]); */
-
-/* 	return 0; */
-/* } */
-
 static inline bool
 fetch_line(char *const restrict line,
 	   const int size_max)
@@ -393,7 +365,7 @@ fetch_word_count(const char *const restrict line)
 
 const char *
 decrypt_next(char *restrict from,
-	     char *const restrict base_cipher)
+	     char *const restrict parent_cipher)
 {
 	const struct MapEntry *restrict match;
 	char *restrict until;
@@ -425,14 +397,12 @@ decrypt_next(char *restrict from,
 				until);
 
 	while (1) {
-		/* printf("found match for '%.*s': %s\n", */
-		/*        (int) (until - from), from, (match == NULL) ? "NULL" : &match->word.buffer[0]); */
 		if (match == NULL)
 			return NULL;
 
 
 		cipher_copy(&next_cipher[0],
-			    base_cipher);
+			    parent_cipher);
 
 		if (cipher_update(&next_cipher[0],
 				  &match->word,
@@ -454,7 +424,7 @@ decrypt_next(char *restrict from,
 static inline void
 decrypt_line(char *const restrict line)
 {
-	static char cipher[26];
+	char cipher[26] = { '\0' };
 
 	const char *const restrict until = decrypt_next(line,
 							&cipher[0]);
