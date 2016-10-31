@@ -11,32 +11,23 @@ struct ColNode {
 	struct ColNode *restrict next;
 };
 
-struct Queen {
-	unsigned int row;
-	unsigned int col;
-};
-
-struct QueenBuffer {
-	struct Queen *restrict from;
-	struct Queen *restrict until;
-};
-
-
 struct Board {
+	char **rows;
 	char *buffer;
 	size_t size;
 };
 
-struct RowState {
-	char **row;
-	char **until;
-	struct ColNode *cols;
+struct State {
+	struct ColNode *rem_cols;
+	unsigned int *queen_cols;
+	unsigned int row;
+	unsigned int n;
 };
 
 
 static inline void
 exit_on_failure(const char *const restrict failure)
-__attribute__((no_return));
+__attribute__((noreturn));
 
 static inline void
 exit_on_failure(const char *const restrict failure)
@@ -48,8 +39,23 @@ exit_on_failure(const char *const restrict failure)
 
 
 static inline void
-print_board(const struct Board *const restrict board)
+print_board(const struct Board *const restrict board,
+	    const struct State *const restrict state)
 {
+	unsigned int row;
+
+	char *const restrict *const restrict board_rows = board->rows;
+	const unsigned int *const restrict queen_cols = state->queen_cols;
+	const unsigned int n = state->n;
+
+
+	row = 0;
+	do {
+		board_rows[row][queen_cols[row]] = 'X';
+		++row;
+	} while (row < n);
+
+
 	if (write(STDOUT_FILENO,
 		  board->buffer,
 		  board->size) >= 0)
@@ -61,22 +67,24 @@ print_board(const struct Board *const restrict board)
 
 
 static inline void
-init_board_row_state(struct Board *const restrict board,
-		     struct RowState *const restrict row_state,
-		     const unsigned int n)
+init_board_state(struct Board *const restrict board,
+		 struct State *const restrict state,
+		 const unsigned int n)
 {
-	char *restrict *restrict row;
+	char *restrict *restrict board_row;
 	char *restrict buffer;
 	char *restrict buffer_until;
 	struct ColNode *restrict prev_node;
 	struct ColNode *restrict next_node;
 	unsigned int col;
 
-	buffer = board->buffer;
-	row    = row_state->row;
+	board_row = board->rows;
+	buffer	  = board->buffer;
+
+	char *restrict *const restrict board_row_until = board_row + n;
 
 	do {
-		*row	     = buffer;
+		*board_row   = buffer;
 		buffer_until = buffer + n;
 
 		do {
@@ -87,10 +95,10 @@ init_board_row_state(struct Board *const restrict board,
 		*buffer = '\n';
 		++buffer;
 
-		++row;
-	} while (row < row_state->until);
+		++board_row;
+	} while (board_row < board_row_until);
 
-	next_node	= row_state->cols;
+	next_node	= state->rem_cols;
 	next_node->col	= 0;
 	next_node->prev = NULL;
 
@@ -104,6 +112,9 @@ init_board_row_state(struct Board *const restrict board,
 	}
 
 	next_node->next = NULL;
+
+	state->row = 0;
+	state->n   = n;
 }
 
 static inline void
@@ -133,104 +144,134 @@ replace_col_node(struct ColNode *const restrict node)
 }
 
 static inline bool
-queens_collide_diagonally(const struct Queen *const restrict queen1,
-			  const struct Queen *const restrict queen2)
+queen_valid_fit(const unsigned int *const restrict queen_cols,
+		const unsigned int new_row,
+		const unsigned int new_col)
 {
-	return (queen2->row - queen1->row) == (queen2->col - queen1->col);
-}
+	unsigned int queen_row;
+	unsigned int queen_col;
 
-static inline bool
-queen_valid_fit(const struct QueenBuffer *const restrict buffer,
-		const struct Queen *const restrict new_queen)
-{
-	const struct Queen *restrict queen;
+	unsigned int delta_row;
+	unsigned int delta_col;
 
-	queen = buffer->from;
+	queen_row = 0;
 
 	while (1) {
-		if (queen == buffer->until)
+		if (queen_row == new_row)
 			return true;
 
-		if (queens_collide_diagonally(queen,
-					      new_queen))
+		delta_row = new_row - queen_row;
+
+		queen_col = queen_cols[queen_row];
+
+		delta_col = (queen_col > new_col)
+			  ? (queen_col - new_col)
+			  : (new_col - queen_col);
+
+		if (delta_row == delta_col)
 			return false;
 
-		++queen;
+		++queen_row;
 	}
 }
 
 
-
 bool
-place_next_queen(struct Board *const restrict board,
-		 struct RowState *const restrict row_state)
+place_next_queen(struct State *const restrict state)
 {
 	struct ColNode *restrict node;
-	char *restrict cell;
 
-	if (row_state->row = row_state->until)
+	const unsigned int queen_row = state->row;
+
+	if (queen_row == state->n)
 		return true;
 
-	node = row_state->cols;
+	++(state->row);
 
-	if (node == NULL)
-		return false;
+	unsigned int *const restrict queen_col = &state->queen_cols[queen_row];
 
-	cell = &board->buffer[node->col];
+	node = state->rem_cols;
 
-	*cell = 'X';
+	if (queen_valid_fit(state->queen_cols,
+			    queen_row,
+			    node->col)) {
 
-	row_state->cols = node->next;
-	++(row_state->row);
-	if (place_next_queen(board,
-			     row_state))
-		return true;
+		*queen_col = node->col;
+
+		state->rem_cols = node->next;
+
+		if (place_next_queen(state))
+			return true;
+
+		state->rem_cols = node;
+	}
+
+	while (1) {
+		node = node->next;
+
+		if (node == NULL) {
+			--(state->row);
+			return false;
+		}
 
 
+		if (queen_valid_fit(state->queen_cols,
+				    queen_row,
+				    node->col)) {
+			*queen_col = node->col;
 
+			remove_col_node(node);
 
+			if (place_next_queen(state))
+				return true;
+
+			replace_col_node(node);
+		}
+	}
 }
+
 
 
 static inline void
 n_queens(const unsigned int n)
 {
 	struct Board board;
-	struct RowState row_state;
+	struct State state;
 
 	if (n == 0) {
 		puts("no solution: n is zero");
 		return;
 	}
 
-
 	board.size = sizeof(char) * (n * (n + 1));
 
-	board.buffer
-	= malloc(board.size + (n * (sizeof(char **) + sizeof(struct ColNode))));
+	board.rows
+	= malloc(  board.size
+		 + (n * (  sizeof(char **)
+			 + sizeof(struct ColNode)
+			 + sizeof(unsigned int))));
 
 
-	if (board.buffer == NULL) {
+	if (board.rows == NULL) {
 		exit_on_failure("malloc");
 		__builtin_unreachable();
 	}
 
-	row_state.row	= (char **) (board.buffer + board.size);
-	row_state.until	= row_state.row + n;
-	row_state.cols	= (struct ColNode *) row_state.until;
+	board.buffer	 = (char *) (board.rows + n);
+	state.rem_cols	 = (struct ColNode *) (board.buffer + board.size);
+	state.queen_cols = (unsigned int *) (state.rem_cols + n);
 
+	init_board_state(&board,
+			 &state,
+			 n);
 
-	init_board_row_state(&board,
-			     &row_state,
-			     n);
-
-	if (place_next_queen(&board,
-			     &row_state))
-		print_board(&board);
+	if (place_next_queen(&state))
+		print_board(&board,
+			    &state);
 	else
 		puts("no solution: did not find");
 
-	free(board.buffer);
+	free(board.rows);
 	return;
 }
 
