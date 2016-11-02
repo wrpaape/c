@@ -279,13 +279,6 @@ n_queens(const unsigned int n)
 int
 main(void)
 {
-	n_queens(8);
+	n_queens(10);
 	return 0;
 }
-
-
-
-
-
-
-
