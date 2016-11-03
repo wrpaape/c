@@ -19,24 +19,39 @@ static inline void
 read_expression(char *const restrict buffer,
 		const size_t size_max)
 {
-	const char *restrict failure;
+	const char *restrict message;
+	FILE *restrict stream;
+	int exit_status;
 
 	const ssize_t size_read = read(STDIN_FILENO,
 				       buffer,
 				       size_max);
 
-	if (size_read < 0) {
-		failure = "read failure\n";
-	} else if (size_read == size_max) {
-		failure = "read overflow\n";
+
+	if (size_read > 0) {
+		if (size_read < size_max) {
+			buffer[size_read - 1] = '\0';	/* remove newline */
+			return;
+		} else {
+			message	    = "read overflow\n";
+			stream	    = stderr;
+			exit_status = 1;
+		}
 	} else {
-		buffer[size_read - 1] = '\0';	/* remove newline */
-		return;
+		if (size_read < 0) {
+			message	    = "read failure\n";
+			stream	    = stderr;
+			exit_status = 1;
+		} else {
+			message	    = "done\n";
+			stream	    = stdout;
+			exit_status = 0;
+		}
 	}
 
-	fputs(failure,
-	      stderr);
-	exit(1);
+	fputs(message,
+	      stream);
+	exit(exit_status);
 	__builtin_unreachable();
 }
 
@@ -126,7 +141,7 @@ evaluate_expression(int *const restrict result,
 				*head_value = node_value % (*head_value);
 			}
 
-			head->next   = node->next;
+			head->next = node->next;
 			break;
 
 		default:
