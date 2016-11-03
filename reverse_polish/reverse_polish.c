@@ -1,6 +1,7 @@
 #include <unistd.h>	/* read/write */
 #include <stdlib.h>	/* exit */
 #include <stdio.h>	/* printf */
+#include <stdbool.h>	/* bool */
 
 
 #define BUFFER_SIZE 1024
@@ -14,7 +15,7 @@
 
 
 
-void
+static inline void
 read_expression(char *const restrict buffer,
 		const size_t size_max)
 {
@@ -39,6 +40,46 @@ read_expression(char *const restrict buffer,
 	__builtin_unreachable();
 }
 
+static inline bool
+evaluate_expression(int *const restrict result,
+		    const char *restrict buffer,
+		    const char *restrict *const restrict failure)
+{
+	struct Node {
+		int value;
+		struct Node *next;
+	};
+
+	static struct Node node_alloc[BUFFER_SIZE / 2];
+
+	struct Node *restrict node;
+	struct Node *restrict head;
+
+	char token;
+
+	node = &node_alloc[0];
+	head = NULL;
+
+	while (1) {
+
+		token = *buffer;
+
+		switch (token) {
+		case '\0':
+			if ((head == NULL) || (head->next != NULL)) {
+				*failure = "imbalanced expression\n";
+				return false;
+			}
+
+			*result = head->value;
+			return true;
+
+		default:
+			*failure = "invalid operation\n";
+			return false;
+		}
+	}
+}
 
 
 
@@ -46,12 +87,22 @@ int
 main(void)
 {
 	static char buffer[BUFFER_SIZE];
+	const char *restrict failure;
+	int result;
 
-	read_expression(&buffer[0],
-			sizeof(buffer));
+	while (1) {
+		read_expression(&buffer[0],
+				sizeof(buffer));
 
-	fputs(&buffer[0],
-	      stdout);
+		if (evaluate_expression(&result,
+					&buffer[0],
+					&failure))
+			printf("%d\n",
+			       result);
+		else
+			fputs(failure,
+			      stderr);
+	}
 
 	return 0;
 }
