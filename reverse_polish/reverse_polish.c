@@ -6,7 +6,7 @@
 
 #define BUFFER_SIZE 1024
 
-#define ASCII_TO_DIGIT(ASCII) (((unsigned int) (ASCII)) & 15u)
+#define ASCII_TO_DIGIT(TOKEN) (((int) (TOKEN)) & 15u)
 
 
 
@@ -53,15 +53,18 @@ evaluate_expression(int *const restrict result,
 	static struct Node node_alloc[BUFFER_SIZE / 2];
 
 	struct Node *restrict node;
+	struct Node *restrict node_alloc_ptr;
 	struct Node *restrict head;
+	int *restrict head_value;
+	int node_value;
 
 	char token;
 
-	node = &node_alloc[0];
+	node_alloc_ptr = &node_alloc[0];
+
 	head = NULL;
 
 	while (1) {
-
 		token = *buffer;
 
 		switch (token) {
@@ -74,10 +77,64 @@ evaluate_expression(int *const restrict result,
 			*result = head->value;
 			return true;
 
+		case '0' ... '9':
+			node = node_alloc_ptr;
+			++node_alloc_ptr;
+
+			node->value = ASCII_TO_DIGIT(token);
+			node->next  = head;
+			head = node;
+			break;
+
+		case '+':
+		case '-':
+		case '*':
+		case '/':
+		case '%':
+			if (head == NULL) {
+				*failure = "imbalanced expression\n";
+				return false;
+			}
+
+			node = head->next;
+			if (node == NULL) {
+				*failure = "imbalanced expression\n";
+				return false;
+			}
+
+			head_value = &head->value;
+			node_value = node->value;
+
+			switch (token) {
+			case '+':
+				*head_value += node_value;
+				break;
+
+			case '-':
+				*head_value  = node_value - (*head_value);
+				break;
+
+			case '*':
+				*head_value *= node_value;
+				break;
+
+			case '/':
+				*head_value  = node_value / (*head_value);
+				break;
+
+			default:
+				*head_value = node_value % (*head_value);
+			}
+
+			head->next   = node->next;
+			break;
+
 		default:
 			*failure = "invalid operation\n";
 			return false;
 		}
+
+		++buffer;
 	}
 }
 
