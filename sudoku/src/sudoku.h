@@ -59,6 +59,15 @@ exit_on_failure(const char *const restrict failure)
 __attribute__((noreturn));
 
 static inline void
+init_row(struct Cell *restrict *const restrict cell_ptr,
+	 unsigned int *const restrict row,
+	 unsigned int *restrict col,
+	 unsigned int *restrict block,
+	 unsigned int *const restrict *restrict block_col,
+	 unsigned int *const restrict *const restrict block_cols_last,
+	 char *restrict *const restrict buffer_ptr);
+
+static inline void
 init_board(void);
 
 static inline void

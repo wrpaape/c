@@ -43,13 +43,123 @@ read_board(void)
 	__builtin_unreachable();
 }
 
+static inline void
+init_row(struct Cell *restrict *const restrict cell_ptr,
+	 unsigned int *const restrict row,
+	 unsigned int *restrict col,
+	 unsigned int *restrict block,
+	 unsigned int *const restrict *restrict block_col,
+	 unsigned int *const restrict *const restrict block_cols_until,
+	 char *restrict *const restrict buffer_ptr)
+{
+	int move;
+	char token;
+	char *restrict buffer;
+	struct Cell *restrict cell;
+
+	cell   = *cell_ptr;
+	buffer = *buffer_ptr;
+
+	while (1) {
+		token = *buffer;
+
+		if (!IS_ASCII_DIGIT(token))
+			exit_on_failure("improper board format\n");
+
+		if (token == '\0') {
+			cell->row   = row;
+			cell->col   = col;
+			cell->block = block;
+			cell->token = buffer;
+			++cell;
+
+		} else {
+			move = ASCII_TO_MOVE(token);
+
+			*row   |= move;
+			*col   |= move;
+			*block |= move;
+		}
+
+		++col;
+		if (col == *block_col) {
+			++block_col;
+			if (block_col == block_cols_until)
+				break;
+
+			++block;
+		}
+
+		buffer += 4;
+	}
+
+	*cell_ptr   = cell;
+	*buffer_ptr = buffer;
+}
 
 static inline void
 init_board(void)
 {
+	struct Cell *restrict cell;
+	unsigned int *restrict row;
+	unsigned int *restrict col;
+	unsigned int *restrict block;
+	char *restrict buffer;
+	unsigned int *const restrict *restrict block_row;
+
+	static unsigned int *const block_cols[3] = {
+		&board.cols[3],
+		&board.cols[6],
+		&board.cols[9]
+	};
+
+	static unsigned int *const restrict *const restrict block_cols_until
+	= &block_cols[3];
+
+	static unsigned int *const block_rows[3] = {
+		&board.rows[3],
+		&board.rows[6],
+		&board.rows[9]
+	};
+
+	static unsigned int *const restrict *const restrict block_rows_until
+	= &block_rows[3];
+
+
 	read_board();
 
+	cell = &board.cells[0];
+	board.rem_cells = cell;
 
+	row    = &board.rows[0];
+	col    = &board.cols[0];
+	block  = &board.blocks[0];
+	buffer = &board.buffer[2];
+
+	block_row = &block_rows[0];
+
+	while (1) {
+		init_row(&cell,
+			 row,
+			 col,
+			 block,
+			 &block_cols[0],
+			 block_cols_until,
+			 &buffer);
+
+		++row;
+		if (row == *block_row) {
+			++block_row;
+			if (block_row == block_rows_until)
+				break;
+
+			block += 3;
+		}
+
+		buffer += (BOARD_LINE_LENGTH + 2);
+	}
+
+	board.cells_until = cell;
 }
 
 static inline void
