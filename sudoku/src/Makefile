@@ -116,7 +116,7 @@ BINARY_DIR		:= $(call PATH_JOIN,$(PROJECT_ROOT) bin)
 # BOARD CONFIG
 # ══════════════════════════════════════════════════════════════════════════════
 BOARD_FILENAME	:= board.txt
-BOARD_PATH	:= $(call TRIM,"\"$(realpath $(BOARD_FILENAME))\"")
+BOARD_PATH	:= $(call TRIM,"\"$(realpath $(call PATH_JOIN,$(PROJECT_ROOT) $(BOARD_FILENAME)))\"")
 
 # PATH CONFIG
 # ══════════════════════════════════════════════════════════════════════════════
@@ -141,7 +141,7 @@ BINARY_PATH 		= $(call BINARY_FILE_PATH,$(BINARY_DIR),$(call JOIN,$1,_))# binary
 # C Compiler
 # ──────────────────────────────────────────────────────────────────────────────
 CC		:= gcc
-CC_ENV_FLAGS	:= -D__USE_FIXED_PROTOTYPES__ -D_GNU_SOURCE $(SYS_ENV_FLAGS) -DBOARD_PATH=$(BOARD_PATH)
+CC_ENV_FLAGS	:= -D__USE_FIXED_PROTOTYPES__ -D_GNU_SOURCE $(SYS_ENV_FLAGS)
 CC_BASE_FLAGS	:= -std=gnu99 -march=native $(CC_ENV_FLAGS) -I$(HEADER_DIR)
 
 ifeq (T,$(DEVELOPMENT_MODE))
@@ -181,6 +181,20 @@ endif
 UTILS_UTILS_HDR	:= $(call HEADER_PATH,utils utils)
 
 
+# string/string_utils
+# ──────────────────────────────────────────────────────────────────────────────
+STRING_STRING_UTILS_SRC 	:= $(call SOURCE_PATH,string string_utils)
+STRING_STRING_UTILS_HDR		:= $(call HEADER_PATH,string string_utils)
+STRING_STRING_UTILS_OBJ 	:= $(call OBJECT_PATH,string string_utils)
+# ─────────────── target prequisites ───────────────────────────────────────────
+STRING_STRING_UTILS_OBJ_PREQS	:= $(STRING_STRING_UTILS_SRC) 	\
+			   	   $(STRING_STRING_UTILS_HDR)
+STRING_STRING_UTILS_OBJ_GROUP	:= $(STRING_STRING_UTILS_OBJ)
+# ─────────────── targets ──────────────────────────────────────────────────────
+TARGETS				+= $(STRING_STRING_UTILS_OBJ)
+
+
+
 # file/file_utils
 # ──────────────────────────────────────────────────────────────────────────────
 FILE_FILE_UTILS_SRC 		:= $(call SOURCE_PATH,file file_utils)
@@ -203,10 +217,12 @@ SUDOKU_OBJ 		:= $(call OBJECT_PATH,sudoku)
 SUDOKU_BIN 		:= $(call BINARY_PATH,sudoku)
 # ─────────────── target prequisites ───────────────────────────────────────────
 SUDOKU_BIN_PREQS	:= $(SUDOKU_OBJ)			\
-			   $(FILE_FILE_UTILS_OBJ_GROUP)
+			   $(FILE_FILE_UTILS_OBJ_GROUP)		\
+			   $(STRING_STRING_UTILS_OBJ_GROUP)
 SUDOKU_OBJ_PREQS	:= $(SUDOKU_SRC) 			\
 			   $(SUDOKU_HDR)			\
-			   $(FILE_FILE_UTILS_HDR)
+			   $(FILE_FILE_UTILS_HDR)		\
+			   $(STRING_STRING_UTILS_HDR)
 # ─────────────── targets ──────────────────────────────────────────────────────
 TARGETS			+= $(SUDOKU_OBJ)			\
 			   $(SUDOKU_BIN)
@@ -241,9 +257,14 @@ $(SUDOKU_BIN): $(SUDOKU_BIN_PREQS)
 # make sudoku object
 # ──────────────────────────────────────────────────────────────────────────────
 $(SUDOKU_OBJ): $(SUDOKU_OBJ_PREQS)
-	$(CC) $(CC_FLAGS) -c $< -o $@
+	$(CC) $(CC_FLAGS) -DBOARD_PATH=$(BOARD_PATH) -c $< -o $@
 
 # make file/file_utils object
 # ──────────────────────────────────────────────────────────────────────────────
 $(FILE_FILE_UTILS_OBJ): $(FILE_FILE_UTILS_OBJ_PREQS)
+	$(CC) $(CC_FLAGS) -c $< -o $@
+
+# make string/string_utils object
+# ──────────────────────────────────────────────────────────────────────────────
+$(STRING_STRING_UTILS_OBJ): $(STRING_STRING_UTILS_OBJ_PREQS)
 	$(CC) $(CC_FLAGS) -c $< -o $@

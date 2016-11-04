@@ -2,17 +2,15 @@
 
 /* API
  * ────────────────────────────────────────────────────────────────────────── */
-/* open (absolute or relative path, provide mode) */
+/* open (absolute or relative path, do not provide mode) */
 extern inline void
 file_open_muffle(int *const restrict file_descriptor,
 		 const char *const path,
-		 const int open_flag,
-		 const mode_t mode);
+		 const int open_flag);
 extern inline bool
 file_open_report(int *const restrict file_descriptor,
 		 const char *const path,
 		 const int open_flag,
-		 const mode_t mode,
 		 const char *restrict *const restrict failure);
 
 /* read from open file descriptor */

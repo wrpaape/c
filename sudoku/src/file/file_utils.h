@@ -21,11 +21,9 @@
 #ifdef WIN32
 /* open a file */
 #	define FILE_OPEN(PATH,						\
-			 OPEN_FLAG,					\
-			 MODE)						\
+			 OPEN_FLAG)					\
 	_open(PATH,							\
-	      OPEN_FLAG,						\
-	      MODE)
+	      OPEN_FLAG)
 /* read a file */
 #	define FILE_READ(FILE_DESCRIPTOR,				\
 			 BUFFER,					\
@@ -47,11 +45,9 @@
 #else
 /* open a file */
 #	define FILE_OPEN(PATH,						\
-			 OPEN_FLAG,					\
-			 MODE)						\
+			 OPEN_FLAG)					\
 	open(PATH,							\
-	     OPEN_FLAG,							\
-	     MODE)
+	     OPEN_FLAG)
 /* read a file */
 #	define FILE_READ(FILE_DESCRIPTOR,				\
 			 BUFFER,					\
@@ -75,28 +71,24 @@
 
 /* API
  * ────────────────────────────────────────────────────────────────────────── */
-/* open (absolute or relative path, provide mode) */
+/* open (absolute or relative path, do not provide mode) */
 inline void
 file_open_muffle(int *const restrict file_descriptor,
 		 const char *const path,
-		 const int open_flag,
-		 const mode_t mode)
+		 const int open_flag)
 {
 	*file_descriptor = FILE_OPEN(path,
-				     open_flag,
-				     mode);
+				     open_flag);
 }
 
 inline bool
 file_open_report(int *const restrict file_descriptor,
 		 const char *const path,
 		 const int open_flag,
-		 const mode_t mode,
 		 const char *restrict *const restrict failure)
 {
 	*file_descriptor = FILE_OPEN(path,
-				     open_flag,
-				     mode);
+				     open_flag);
 
 	if (LIKELY(*file_descriptor >= 0))
 		return true;
