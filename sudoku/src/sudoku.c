@@ -66,7 +66,7 @@ init_row(struct Cell *restrict *const restrict cell_ptr,
 		if (!IS_ASCII_DIGIT(token))
 			exit_on_failure("improper board format\n");
 
-		if (token == '\0') {
+		if (token == '0') {
 			cell->row   = row;
 			cell->col   = col;
 			cell->block = block;
@@ -134,7 +134,7 @@ init_board(void)
 	row    = &board.rows[0];
 	col    = &board.cols[0];
 	block  = &board.blocks[0];
-	buffer = &board.buffer[2];
+	buffer = &board.buffer[1];
 
 	block_row = &block_rows[0];
 
@@ -156,7 +156,7 @@ init_board(void)
 			block += 3;
 		}
 
-		buffer += (BOARD_LINE_LENGTH + 2);
+		buffer += (BOARD_LINE_LENGTH + 4);
 	}
 
 	board.cells_until = cell;
@@ -204,7 +204,7 @@ solve_board(void)
 	struct Cell *const restrict cell = board.rem_cells;
 	++board.rem_cells;
 
-	const unsigned int rem_moves = !(  *(cell->row)
+	const unsigned int rem_moves = ~(  *(cell->row)
 					 | *(cell->col)
 					 | *(cell->block));
 
@@ -226,10 +226,12 @@ solve_board(void)
 			*(cell->block) ^= move;
 		}
 
-		if (move == (1 << 9))
-			return false;
 
 		move <<= 1;
+		if (move > (1 << 9)) {
+			--board.rem_cells;
+			return false;
+		}
 	}
 }
 
