@@ -52,7 +52,7 @@ init_row(struct Cell *restrict *const restrict cell_ptr,
 	 unsigned int *const restrict *const restrict block_cols_until,
 	 char *restrict *const restrict buffer_ptr)
 {
-	int move;
+	unsigned int move;
 	char token;
 	char *restrict buffer;
 	struct Cell *restrict cell;

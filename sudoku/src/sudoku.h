@@ -48,7 +48,7 @@ struct Board {
 #define MOVE_TO_ASCII(MOVE)	DIGIT_TO_ASCII(__builtin_ctz(MOVE))
 
 /*  '0'..'9' → 1 << 0..9 */
-#define ASCII_TO_MOVE(TOKEN)	ASCII_TO_DIGIT(1 << ASCII_TO_DIGIT(TOKEN))
+#define ASCII_TO_MOVE(TOKEN)	(1 << ASCII_TO_DIGIT(TOKEN))
 
 
 
