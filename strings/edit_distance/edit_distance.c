@@ -163,7 +163,6 @@ do_edit_distance(unsigned int *const restrict *const restrict history,
 			if (distance < min_distance)
 				min_distance = distance;
 
-
 			history[i][j] = min_distance;
 
 			if (j == length2)
