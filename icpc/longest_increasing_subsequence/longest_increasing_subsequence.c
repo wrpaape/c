@@ -1,4 +1,5 @@
-#include <stdio.h> /* printf */
+#include <stdio.h>	/* printf */
+#include <stdbool.h>	/* bool */
 
 struct Interval {
 	const unsigned int *restrict from;
@@ -15,6 +16,7 @@ longest_increasing_subsequence(struct Interval *const restrict result,
 	unsigned int length_current;
 	unsigned int prev;
 	unsigned int next;
+	bool decreased;
 	const unsigned int *restrict current;
 
 	if (until <= sequence) {
@@ -46,7 +48,11 @@ longest_increasing_subsequence(struct Interval *const restrict result,
 
 			next = *sequence;
 
-			if (next <= prev) {
+			decreased = (next <= prev);
+
+			prev = next;
+
+			if (decreased) {
 				length_current = sequence - current;
 
 				if (length_current > length_longest) {
@@ -58,8 +64,6 @@ longest_increasing_subsequence(struct Interval *const restrict result,
 
 				break;
 			}
-
-			prev = next;
 		}
 	}
 }
