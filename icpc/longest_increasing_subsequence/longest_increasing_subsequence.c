@@ -16,7 +16,7 @@ longest_increasing_subsequence(struct Interval *const restrict result,
 	unsigned int length_current;
 	unsigned int prev;
 	unsigned int next;
-	bool decreased;
+	bool did_not_increase;
 	const unsigned int *restrict current;
 
 	if (until <= sequence) {
@@ -48,11 +48,11 @@ longest_increasing_subsequence(struct Interval *const restrict result,
 
 			next = *sequence;
 
-			decreased = (next <= prev);
+			did_not_increase = (next <= prev);
 
 			prev = next;
 
-			if (decreased) {
+			if (did_not_increase) {
 				length_current = sequence - current;
 
 				if (length_current > length_longest) {
