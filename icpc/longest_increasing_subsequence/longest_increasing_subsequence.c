@@ -112,14 +112,8 @@ do_lis(const unsigned int *const restrict from,
 }
 
 #define UNTIL_PTR(SEQ) &SEQ[sizeof(SEQ) / sizeof(SEQ[0])]
-
 #define SEQ(N) sequence ## N
-
 #define DO_LIS(N) do_lis(&SEQ(N)[0], UNTIL_PTR(SEQ(N)))
-
-
-
-
 
 int
 main(void)
