@@ -12,10 +12,10 @@ maximal_subsequence(struct Subsequence *const restrict result,
 		    const int *restrict sequence,
 		    const int *restrict until)
 {
-	int *restrict acc_from;
-	int *restrict max_from;
-	int *restrict acc_upto;
-	int *restrict max_upto;
+	const int *restrict acc_from;
+	const int *restrict max_from;
+	const int *restrict acc_upto;
+	const int *restrict max_upto;
 	int value;
 	int next_total;
 	int acc_total;
@@ -38,7 +38,6 @@ maximal_subsequence(struct Subsequence *const restrict result,
 	++sequence;
 
 	while (sequence < until) {
-
 		value = *sequence;
 
 		next_total = acc_total + value;
@@ -54,13 +53,10 @@ maximal_subsequence(struct Subsequence *const restrict result,
 		acc_upto = sequence;
 
 		if (acc_total > max_total) {
+			max_total = acc_total;
 			max_from  = acc_from;
 			max_upto  = acc_upto;
-			max_total = value;
-
-
 		}
-
 
 		++sequence;
 	}
@@ -112,11 +108,11 @@ do_ms(const int *const restrict from,
 			    from,
 			    until);
 
-	print_array(interval.from,
-		    interval.until);
+	print_array(subsequence.from,
+		    subsequence.until);
 
 	printf("total: %d\n",
-	       interval.total);
+	       subsequence.total);
 }
 
 
@@ -132,7 +128,7 @@ main(void)
 		-2, 1, -3, 4, -1, 2, 1, -5, 4
 	};
 
-	DO_MDO_MS(1);
+	DO_MS(1);
 
 	return 0;
 }
