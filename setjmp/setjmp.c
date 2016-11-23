@@ -53,6 +53,7 @@ main(void)
 
 	if (setjmp(jump_buffer) == 0) {
 		SET_INTS(1);
+		PRINT_INTS();
 		do_it();
 
 	} else {
