@@ -5,7 +5,7 @@
  * ────────────────────────────────────────────────────────────────────────── */
 #include <unistd.h>	/* read, write */
 #include <stdlib.h>	/* exit */
-#include <stdint.h>	/* uint64_t */
+#include <stdint.h>	/* u|int32|64_t */
 
 /* helper macros
  * ────────────────────────────────────────────────────────────────────────── */
@@ -21,8 +21,8 @@ exit_on_success(SUCCESS "\n",						\
 /* struct declarations
  * ────────────────────────────────────────────────────────────────────────── */
 struct Key {
-	uint64_t hash;
-	unsigned char *string;
+	int64_t hash;
+	const unsigned char *string;
 };
 
 inline void
@@ -50,7 +50,7 @@ exit_on_success(const char *const restrict message,
 struct Key *
 get_key(void);
 
-int
+int64_t
 key_compare(const struct Key *const restrict key1,
 	    const struct Key *const restrict key2);
 
