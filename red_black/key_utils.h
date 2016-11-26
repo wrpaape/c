@@ -13,17 +13,16 @@
 exit_on_failure(FAILURE "\n",						\
 		sizeof(FAILURE))
 
+#define EXIT_ON_SUCCESS(SUCCESS)					\
+exit_on_success(SUCCESS "\n",						\
+		sizeof(SUCCESS))
+
 
 /* struct declarations
  * ────────────────────────────────────────────────────────────────────────── */
-struct String {
-	unsigned char *restrict from;
-	unsigned char *restrict until;
-};
-
 struct Key {
 	uint64_t hash;
-	struct String string;
+	unsigned char *string;
 };
 
 inline void
@@ -34,6 +33,17 @@ exit_on_failure(const char *const restrict failure,
 		     failure,
 		     length_failure);
 	exit(EXIT_FAILURE);
+	__builtin_unreachable();
+}
+
+inline void
+exit_on_success(const char *const restrict message,
+		const size_t length_message)
+{
+	(void) write(STDOUT_FILENO,
+		     message,
+		     length_message);
+	exit(EXIT_SUCCESS);
 	__builtin_unreachable();
 }
 

@@ -1,38 +1,38 @@
-#include "red_black_utils.h"
+#include "key_utils.h"
 
 extern inline void
 exit_on_failure(const char *const restrict failure,
 		const size_t length_failure)
 __attribute__((noreturn));
 
+extern inline void
+exit_on_success(const char *const restrict message,
+		const size_t length_message)
+__attribute__((noreturn));
 
 
 
 static inline void
-get_string(struct String *const restrict string)
+get_string(unsigned char *restrict *const restrict string,
+	   size_t *const restrict length)
 {
 	static unsigned char buffer[2048];
 	static size_t rem_size		     = sizeof(buffer);
 	static unsigned char *restrict alloc = &buffer[0];
 
-	ssize_t size_read;
-	const char *restrict failure;
-	size_t length_failure;
-
-
-	size_read = read(STDIN_FILENO,
-			 alloc,
-			 rem_size);
-
+	const ssize_t size_read = read(STDIN_FILENO,
+				       alloc,
+				       rem_size);
 
 	if (size_read >= 0) {
 		if (size_read < (ssize_t) rem_size) {
-			string->from  = alloc;
-			string->until = alloc + size_read;
+			*string = alloc;
+			*length = (size_t) size_read;
 
-			alloc = string->until;
+			const size_t size_string = size_read + 1;
 
-			rem_size -= size_read;
+			alloc	 += size_string;
+			rem_size -= size_string;
 			return;
 
 		} else {
