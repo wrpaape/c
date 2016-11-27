@@ -1,5 +1,5 @@
-#ifndef RED_BLACK_UTILS_H_
-#define RED_BLACK_UTILS_H_
+#ifndef KEY_UTILS_H_
+#define KEY_UTILS_H_
 
 /* external dependencies
  * ────────────────────────────────────────────────────────────────────────── */
@@ -25,27 +25,16 @@ struct Key {
 	const unsigned char *string;
 };
 
-inline void
+void
 exit_on_failure(const char *const restrict failure,
 		const size_t length_failure)
-{
-	(void) write(STDERR_FILENO,
-		     failure,
-		     length_failure);
-	exit(EXIT_FAILURE);
-	__builtin_unreachable();
-}
+__attribute__((noreturn));
 
-inline void
+void
 exit_on_success(const char *const restrict message,
 		const size_t length_message)
-{
-	(void) write(STDOUT_FILENO,
-		     message,
-		     length_message);
-	exit(EXIT_SUCCESS);
-	__builtin_unreachable();
-}
+__attribute__((noreturn));
+
 
 struct Key *
 get_key(void);
@@ -55,4 +44,4 @@ key_compare(const struct Key *const restrict key1,
 	    const struct Key *const restrict key2);
 
 
-#endif /* ifndef RED_BLACK_UTILS_H_ */
+#endif /* ifndef KEY_UTILS_H_ */

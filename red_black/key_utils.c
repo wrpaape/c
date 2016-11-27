@@ -1,15 +1,32 @@
 #include "key_utils.h"
 
-extern inline void
+void
 exit_on_failure(const char *const restrict failure,
 		const size_t length_failure)
-__attribute__((noreturn));
+{
+	(void) write(STDERR_FILENO,
+		     failure,
+		     length_failure);
+	exit(EXIT_FAILURE);
+	__builtin_unreachable();
+}
 
-extern inline void
+void
 exit_on_success(const char *const restrict message,
 		const size_t length_message)
-__attribute__((noreturn));
+{
+	const int status = (write(STDOUT_FILENO,
+				  message,
+				  length_message) == (ssize_t) length_message);
 
+	if (!status)
+		(void) write(STDERR_FILENO,
+			     "exit_on_success failure: write\n",
+			     sizeof("exit_on_success failure: write\n") - 1);
+
+	exit(status);
+	__builtin_unreachable();
+}
 
 
 static inline void
@@ -262,6 +279,8 @@ key_compare(const struct Key *const restrict key1,
 	     : key1->hash - key2->hash;
 }
 
+
+#if 0
 #include <stdio.h>
 
 int
@@ -283,3 +302,4 @@ main(void)
 
 	return 0;
 }
+#endif
