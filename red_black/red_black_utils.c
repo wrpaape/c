@@ -76,8 +76,7 @@ red_black_insert(struct RedBlackNode *restrict *const restrict tree,
 	if (compare == 0)	/* no duplicates */
 		return;
 
-	if (compare < 0) {
-
-	} else {
-	}
+	node = (compare < 0)
+	     ? parent->left
+	     : parent->right;
 }
