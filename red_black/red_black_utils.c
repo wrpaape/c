@@ -52,8 +52,6 @@ red_black_insert_root(struct RedBlackNode *restrict *const restrict tree,
 	*tree = node;
 }
 
-static inline void
-
 void
 red_black_insert(struct RedBlackNode *restrict *const restrict tree,
 		 const struct Key *const restrict key)
