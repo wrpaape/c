@@ -287,32 +287,122 @@ fetch_strings(const unsigned char *restrict *const restrict string_ptr,
 	return 0;
 }
 
-unsigned int skip_table[64];
+#define KEY "access_token="
+
+const unsigned char *const kmp_key = (const unsigned char *) KEY;
+unsigned int skip_table[sizeof(KEY) - 1];
+const unsigned int length_kmp_key = sizeof(KEY) - 1;
 
 static inline void
-skip_table_init(const char *restrict string)
+init_skip_table(void)
 {
-	const size_t length = string_length(string);
-
 	unsigned int i;
 	unsigned int skip;
 
 	skip = 0;
-
 	skip_table[0] = skip;
-
 	i = 1;
 
-	while (i < length) {
-		skip = (string[i] == string[skip])
+	do {
+		skip = (kmp_key[i] == kmp_key[skip])
 		     ? (skip + 1)
 		     : 0;
 
 		skip_table[i] = skip;
 
 		++i;
+	} while (i < length_kmp_key);
+}
+
+const unsigned char *const bm_key = (const unsigned char *) KEY;
+const unsigned int length_bm_key = sizeof(KEY) - 1;
+
+static int last_occurrence[UCHAR_MAX + 1] = {
+	[0 ... UCHAR_MAX] = -1
+};
+
+static inline int
+max(const int x,
+    const int y)
+{
+	return (x > y) ? x : y;
+}
+
+static inline void
+init_last_occurence_table(void)
+{
+}
+
+static unsigned int skip_table[sizeof(KEY) - 1];
+
+static inline void
+init_bm_tables(void)
+{
+	int i;
+	unsigned int skip;
+
+	last_occurrence[bm_key[0]] = 0;
+
+	skip = 0;
+	skip_table = skip;
+	i = 1;
+
+	do {
+		last_occurrence[bm_key[i]] = i;
+
+		skip = (bm_key[i] == bm_key[skip])
+		     ? (skip + 1)
+		     : 0;
+
+		skip_table[i] = skip;
+
+		++i;
+	} while (i < length_bm_key);
+}
+
+
+static inline bool
+bm_search(const unsigned char *restrict text)
+{
+	unsigned int i_match;
+
+	unsigned int token;
+
+	const unsigned int length_text = (unsigned int) string_length(text);
+
+	if (length_text < length_bm_key)
+		return false;
+
+	const unsigned char *const restrict text_upto
+	= text + (length_text - length_bm_key);
+
+	const unsigned int i_match_max = length_bm_key - 1;
+
+	while (1) {
+		i_match = i_match_max;
+
+		while (1) {
+			token = (unsigned int) text[i_match];
+
+			if (token != bm_key[i_match])
+				break;
+
+			if (i_match == 0)
+				return true;
+
+			--i_match;
+		}
+
+
+		text += max(1, i_match - last_occurrence[token]);
+
+		if (text > text_upto)
+			return false;
 	}
 }
+
+
+
 
 int
 main(void)
@@ -335,10 +425,14 @@ main(void)
 		free((void *) substring);
 	}
 
-	skip_table_init("AABAACAABAA");
+	init_last_occurence_table();
 
-	for (int i = 0; i < sizeof("AABAACAABAA") - 1; ++i)
-		printf(", %u", skip_table[i]);
+	if (bm_search("ooga booga booooooga looga" KEY "snooga"))
+		puts("found bm_key");
+	else
+		puts("did not find bm_key");
+
+
 
 	return exit_status;
 }
