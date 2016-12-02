@@ -95,8 +95,8 @@ update_hash(uint64_t *const restrict hash_ptr,
 
 
 static inline void
-print_matches(const unsigned char *const restrict substring,
-	      const unsigned char *restrict string)
+print_matches(const unsigned char *restrict string,
+	      const unsigned char *const restrict substring)
 {
 	uint64_t hash_substring;
 	uint64_t hash_string;
@@ -144,8 +144,8 @@ string_length(const unsigned char *const restrict string)
 }
 
 static inline bool
-is_substring(const unsigned char *restrict substring,
-	     const unsigned char *restrict string)
+is_substring(const unsigned char *restrict string,
+	     const unsigned char *restrict substring)
 {
 	while (1) {
 		if (*substring == '\0')
@@ -161,8 +161,8 @@ is_substring(const unsigned char *restrict substring,
 }
 
 static inline void
-print_matches_naive(const unsigned char *const restrict substring,
-		    const unsigned char *restrict string)
+print_matches_naive(const unsigned char *restrict string,
+		    const unsigned char *const restrict substring)
 {
 
 	const size_t length_substring = string_length(substring);
@@ -171,8 +171,8 @@ print_matches_naive(const unsigned char *const restrict substring,
 		return;
 
 	while (*string != '\0') {
-		if (is_substring(substring,
-				 string)) {
+		if (is_substring(string,
+				 substring)) {
 			WRITE_OUTPUT(string,
 				     length_substring);
 			WRITE_OUTPUT_LITERAL("\n");
@@ -182,9 +182,17 @@ print_matches_naive(const unsigned char *const restrict substring,
 	}
 }
 
+/* static inline char * */
+/* find_first_match(const unsigned char *const restrict string, */
+/* 		 const unsigned char *restrict substring) */
+/* { */
+/* 	const size_t length_substring = string_length(substring); */
+/* } */
+
+
 int
-fetch_strings(const unsigned char *restrict *const restrict substring_ptr,
-	      const unsigned char *restrict *const restrict string_ptr)
+fetch_strings(const unsigned char *restrict *const restrict string_ptr,
+	      const unsigned char *restrict *const restrict substring_ptr)
 {
 	int file;
 	struct stat stat_buffer;
@@ -279,24 +287,58 @@ fetch_strings(const unsigned char *restrict *const restrict substring_ptr,
 	return 0;
 }
 
+unsigned int skip_table[64];
+
+static inline void
+skip_table_init(const char *restrict string)
+{
+	const size_t length = string_length(string);
+
+	unsigned int i;
+	unsigned int skip;
+
+	skip = 0;
+
+	skip_table[0] = skip;
+
+	i = 1;
+
+	while (i < length) {
+		skip = (string[i] == string[skip])
+		     ? (skip + 1)
+		     : 0;
+
+		skip_table[i] = skip;
+
+		++i;
+	}
+}
+
 int
 main(void)
 {
 	const unsigned char *substring;
 	const unsigned char *string;
 
-	const int exit_status = fetch_strings(&substring,
-					      &string);
+	const int exit_status = fetch_strings(&string,
+					      &substring);
 
 	if (exit_status == 0) {
-		print_matches(substring,
-			      string);
-		/* print_matches_naive(substring, */
-		/* 		    string); */
+		print_matches(string,
+			      substring);
+		/* print_matches_naive(string, */
+		/* 		    substring); */
+		/* print_matches_kmp(string, */
+		/* 		  substring); */
 
-		free((void *) substring);
 		free((void *) string);
+		free((void *) substring);
 	}
+
+	skip_table_init("AABAACAABAA");
+
+	for (int i = 0; i < sizeof("AABAACAABAA") - 1; ++i)
+		printf(", %u", skip_table[i]);
 
 	return exit_status;
 }

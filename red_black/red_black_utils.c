@@ -52,10 +52,35 @@ red_black_insert_root(struct RedBlackNode *restrict *const restrict tree,
 	*tree = node;
 }
 
+static inline void
+rotate_left(struct RedBlackNode *restrict *const restrict tree,
+	    struct RedBlackNode *const restrict parent,
+	    struct RedBlackNode *const restrict rchild)
+{
+	*tree = rchild;
+
+	struct RedBlackNode *const restrict tmp = rchild->left;
+	rchild->left  = parent;
+	parent->right = tmp;
+}
+
+static inline void
+rotate_right(struct RedBlackNode *restrict *const restrict tree,
+	     struct RedBlackNode *const restrict parent,
+	     struct RedBlackNode *const restrict lchild)
+{
+	*tree = lchild;
+
+	struct RedBlackNode *const restrict tmp = lchild->right;
+	lchild->right = parent;
+	parent->left  = tmp;
+}
+
 void
-red_black_insert(struct RedBlackNode *restrict *const restrict tree,
+red_black_insert(struct RedBlackNode *restrict *restrict tree,
 		 const struct Key *const restrict key)
 {
+	struct RedBlackNode *restrict grandparent;
 	struct RedBlackNode *restrict parent;
 	struct RedBlackNode *restrict node;
 	int64_t compare;
