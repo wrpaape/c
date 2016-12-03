@@ -182,6 +182,13 @@ print_matches_naive(const unsigned char *restrict string,
 	}
 }
 
+/* static inline char * */
+/* find_first_match(const unsigned char *const restrict string, */
+/* 		 const unsigned char *restrict substring) */
+/* { */
+/* 	const size_t length_substring = string_length(substring); */
+/* } */
+
 
 int
 fetch_strings(const unsigned char *restrict *const restrict string_ptr,
@@ -294,47 +301,10 @@ max(const int x,
 }
 
 
-static inline bool
-is_prefix(const unsigned char *restrict string,
-	  const unsigned char *restrict substring)
-{
-	unsigned int token;
-
-	while (1) {
-		token = *substring;
-
-		if (token == '\0')
-			return true;
-
-		if (token != *string)
-			return false;
-
-		++string;
-		++substring;
-	}
-}
-
-static inline int
-length_common_suffix(const unsigned char *const restrict string_upto,
-		     const unsigned char *const restrict substring_upto,
-		     const int length_substring)
-{
-	int i;
-
-	i = 0;
-
-	while (   (i < length_substring)
-	       && (string_upto[-i] == substring_upto[-i]))
-		++i;
-
-	return i;
-}
-
-
 const unsigned char *const bm_key = (const unsigned char *) KEY;
 
 #define LENGTH_BM_KEY (sizeof(KEY) - 1)
-#define I_LAST	      (LENGTH_BM_KEY - 1)
+#define I_MATCH_MAX   (LENGTH_BM_KEY - 1)
 
 
 static int bad_char_skip[UCHAR_MAX + 1] = {
@@ -347,95 +317,77 @@ static inline void
 init_bm_tables(void)
 {
 	int i;
-	int i_suffix;
-	int i_prefix;
+	int last_prefix;
 	int length_suffix;
 
 	i = 0;
 	do {
-		bad_char_skip[bm_key[i]] = I_LAST - i;
+		bad_char_skip[bm_key[i]] = I_MATCH_MAX - i;
 		++i;
 	} while (i < LENGTH_BM_KEY);
 
 
-	i        = I_LAST;
-	i_prefix = I_LAST;
-	i_suffix = LENGTH_BM_KEY;
+	length_suffix = 0;
+
+	last_prefix = I_MATCH_MAX;
+
+	good_suffix_skip[I_MATCH_MAX] = last_prefix; /* "" always a prefix */
+
+	i = I_MATCH_MAX - 1;
+
 
 	do {
-		if (is_prefix(bm_key,
-			      &bm_key[i_suffix]))
-			i_prefix = i_suffix;
 
-		good_suffix_skip[i] = i_prefix + (I_LAST - i);
+		if (bm_key[i])
 
-		i_suffix = i;
 		--i;
 	} while (i >= 0);
-
-
-
-	const unsigned char *const restrict bm_key_upto = bm_key + I_LAST;
-	const unsigned char *const restrict suffix_upto = bm_key + 1;
-
-	i = 0;
-	do {
-		length_suffix = length_common_suffix(bm_key_upto,
-						     suffix_upto + i,
-						     i);
-
-		i_suffix = I_LAST - length_suffix;
-
-		if (bm_key[i - length_suffix] != bm_key[i_suffix])
-			good_suffix_skip[i_suffix] = length_suffix + (I_LAST - i);
-
-		++i;
-	} while (i < I_LAST);
 }
 
 static inline int
 bm_search(const unsigned char *restrict text)
 {
-	int i_match;
-
-	unsigned int token;
-	const unsigned char *restrict token_ptr;
-
-	const int length_text = (int) string_length(text);
-
-	if (length_text < LENGTH_BM_KEY)
-		return -1;
-
-	const unsigned char *const restrict text_upto
-	= text + (length_text - LENGTH_BM_KEY);
-
-	const unsigned char *const restrict text_from = text;
-
-	while (1) {
-		i_match = I_LAST;
-
-		while (1) {
-			token_ptr = text + i_match;
-
-			token     = (unsigned int) *token_ptr;
-
-			if (token != bm_key[i_match])
-				break;
-
-			if (i_match == 0)
-				return token_ptr - text_from;
-
-			--i_match;
-		}
-
-
-		text += max(bad_char_skip[token],
-			    good_suffix_skip[i_match]);
-
-		if (text > text_upto)
-			return -1;
-	}
 }
+
+/* static inline bool */
+/* bm_search(const unsigned char *restrict text) */
+/* { */
+/* 	unsigned int i_match; */
+
+/* 	unsigned int token; */
+
+/* 	const unsigned int length_text = (unsigned int) string_length(text); */
+
+/* 	if (length_text < LENGTH_BM_KEY) */
+/* 		return false; */
+
+/* 	const unsigned char *const restrict text_upto */
+/* 	= text + (length_text - LENGTH_BM_KEY); */
+
+/* 	const unsigned int i_match_max = LENGTH_BM_KEY - 1; */
+
+/* 	while (1) { */
+/* 		i_match = i_match_max; */
+
+/* 		while (1) { */
+/* 			token = (unsigned int) text[i_match]; */
+
+/* 			if (token != bm_key[i_match]) */
+/* 				break; */
+
+/* 			if (i_match == 0) */
+/* 				return true; */
+
+/* 			--i_match; */
+/* 		} */
+
+
+/* 		/1* text += max(1, i_match - last_occurrence[token]); *1/ */
+
+/* 		if (text > text_upto) */
+/* 			return false; */
+/* 	} */
+/* } */
 
 
 
@@ -461,12 +413,12 @@ main(void)
 		free((void *) substring);
 	}
 
-	init_bm_tables();
+	init_last_occurence_table();
 
-	const unsigned char *const restrict test
-	= (const unsigned char *) "ooga booga booooooga looga" KEY "snooga";
+	const unsigned char *const restrict string
+	= "ooga booga booooooga looga" KEY "snooga";
 
-	const int index = bm_search(test);
+	const int index = bm_search(string);
 
 	if (index >= 0)
 		printf("found bm_key at index: %d\n", index);
