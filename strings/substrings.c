@@ -289,37 +289,9 @@ fetch_strings(const unsigned char *restrict *const restrict string_ptr,
 
 #define KEY "access_token="
 
-const unsigned char *const kmp_key = (const unsigned char *) KEY;
-unsigned int skip_table[sizeof(KEY) - 1];
-const unsigned int length_kmp_key = sizeof(KEY) - 1;
 
-static inline void
-init_skip_table(void)
-{
-	unsigned int i;
-	unsigned int skip;
 
-	skip = 0;
-	skip_table[0] = skip;
-	i = 1;
 
-	do {
-		skip = (kmp_key[i] == kmp_key[skip])
-		     ? (skip + 1)
-		     : 0;
-
-		skip_table[i] = skip;
-
-		++i;
-	} while (i < length_kmp_key);
-}
-
-const unsigned char *const bm_key = (const unsigned char *) KEY;
-const unsigned int length_bm_key = sizeof(KEY) - 1;
-
-static int last_occurrence[UCHAR_MAX + 1] = {
-	[0 ... UCHAR_MAX] = -1
-};
 
 static inline int
 max(const int x,
@@ -328,33 +300,40 @@ max(const int x,
 	return (x > y) ? x : y;
 }
 
-static inline void
-init_last_occurence_table(void)
-{
-}
 
-static unsigned int skip_table[sizeof(KEY) - 1];
+const unsigned char *const bm_key = (const unsigned char *) KEY;
+
+#define LENGTH_BM_KEY (sizeof(KEY) - 1)
+#define I_MATCH_MAX   (LENGTH_BM_KEY - 1)
+
+
+static int bad_char_skip[UCHAR_MAX + 1] = {
+	[0 ... UCHAR_MAX] = LENGTH_BM_KEY
+};
+
+static unsigned int good_suffix_skip[LENGTH_BM_KEY];
 
 static inline void
 init_bm_tables(void)
 {
 	int i;
-	unsigned int skip;
+	unsigned int length_fix;
+	unsigned int token;
 
-	last_occurrence[bm_key[0]] = 0;
-
-	skip = 0;
-	skip_table = skip;
-	i = 1;
+	length_fix = 0;
+	length_max_fix = length_fix;
+	i = 0;
 
 	do {
-		last_occurrence[bm_key[i]] = i;
+		token = (unsigned int) bm_key[i];
 
-		skip = (bm_key[i] == bm_key[skip])
-		     ? (skip + 1)
-		     : 0;
+		bad_char_skip[token] = I_MATCH_MAX - i;
 
-		skip_table[i] = skip;
+		length_fix = (token == bm_key[length_fix])
+			   ? (length_fix + 1)
+			   : 0;
+
+		length_max_fix[i] = length_fix;
 
 		++i;
 	} while (i < length_bm_key);
@@ -394,7 +373,7 @@ bm_search(const unsigned char *restrict text)
 		}
 
 
-		text += max(1, i_match - last_occurrence[token]);
+		/* text += max(1, i_match - last_occurrence[token]); */
 
 		if (text > text_upto)
 			return false;
