@@ -280,12 +280,6 @@ fetch_strings(const unsigned char *restrict *const restrict string_ptr,
 	return 0;
 }
 
-#define KEY "access_token="
-
-
-
-
-
 static inline int
 max(const int x,
     const int y)
@@ -331,6 +325,8 @@ length_common_suffix(const unsigned char *const restrict string_upto,
 }
 
 
+#define KEY "aaaaabaaaaa"
+
 const unsigned char *const bm_key = (const unsigned char *) KEY;
 
 #define LENGTH_BM_KEY (sizeof(KEY) - 1)
@@ -347,6 +343,7 @@ static inline void
 init_bm_tables(void)
 {
 	int i;
+	int i_next;
 	int i_suffix;
 	int i_prefix;
 	int length_suffix;
@@ -355,33 +352,36 @@ init_bm_tables(void)
 	do {
 		bad_char_skip[bm_key[i]] = I_LAST - i;
 		++i;
-	} while (i < LENGTH_BM_KEY);
+	} while (i < I_LAST);
 
-
-	i        = I_LAST;
 	i_prefix = I_LAST;
 	i_suffix = LENGTH_BM_KEY;
 
 	do {
 		if (is_prefix(bm_key,
-			      &bm_key[i_suffix]))
+			      bm_key + i_suffix)) {
+			printf("\"%s\" is a prefix of \"%s\"\n", bm_key + i_suffix, bm_key);
 			i_prefix = i_suffix;
+		}
+
+		printf("i_prefix: %d\n", i_prefix);
 
 		good_suffix_skip[i] = i_prefix + (I_LAST - i);
+
+		printf("good_suffix_skip[%d]: %d\n", i, good_suffix_skip[i]);
 
 		i_suffix = i;
 		--i;
 	} while (i >= 0);
 
-
-
 	const unsigned char *const restrict bm_key_upto = bm_key + I_LAST;
 	const unsigned char *const restrict suffix_upto = bm_key + 1;
 
 	i = 0;
+	i_next = 1;
 	do {
 		length_suffix = length_common_suffix(bm_key_upto,
-						     suffix_upto + i,
+						     suffix_upto + i_next,
 						     i);
 
 		i_suffix = I_LAST - length_suffix;
@@ -389,52 +389,60 @@ init_bm_tables(void)
 		if (bm_key[i - length_suffix] != bm_key[i_suffix])
 			good_suffix_skip[i_suffix] = length_suffix + (I_LAST - i);
 
-		++i;
-	} while (i < I_LAST);
+		i = i_next;
+		++i_next;
+	} while (i_next < LENGTH_BM_KEY);
+
+	/* for (int i = 0; i <= UCHAR_MAX; ++i) */
+	/* 	printf(", %d", bad_char_skip[i]); */
+	/* puts("\n"); */
+
+	for (int i = 0; i < LENGTH_BM_KEY; ++i)
+		printf(", %d", good_suffix_skip[i]);
+	puts("\n");
 }
 
 static inline int
-bm_search(const unsigned char *restrict text)
+bm_search(const unsigned char *const restrict text)
 {
 	int i_match;
+	int i_text;
 
 	unsigned int token;
-	const unsigned char *restrict token_ptr;
 
 	const int length_text = (int) string_length(text);
 
-	if (length_text < LENGTH_BM_KEY)
-		return -1;
+	i_text = I_LAST;
 
-	const unsigned char *const restrict text_upto
-	= text + (length_text - LENGTH_BM_KEY);
+	while (i_text < length_text) {
 
-	const unsigned char *const restrict text_from = text;
-
-	while (1) {
 		i_match = I_LAST;
 
-		while (1) {
-			token_ptr = text + i_match;
+		printf("comparing \"%.*s\" with \"%s\"\n",
+		       (int) LENGTH_BM_KEY, text + i_text - I_LAST, bm_key);
 
-			token     = (unsigned int) *token_ptr;
+		while (1) {
+			token = (unsigned int) text[i_text];
 
 			if (token != bm_key[i_match])
 				break;
 
 			if (i_match == 0)
-				return token_ptr - text_from;
+				return i_text;
 
 			--i_match;
+			--i_text;
 		}
 
+		printf("bad_char_skip: %d, good_suffix_skip: %d\n",
+		       bad_char_skip[token],
+		       good_suffix_skip[i_match]);
 
-		text += max(bad_char_skip[token],
-			    good_suffix_skip[i_match]);
-
-		if (text > text_upto)
-			return -1;
+		i_text += max(bad_char_skip[token],
+			      good_suffix_skip[i_match]);
 	}
+
+	return -1;
 }
 
 
@@ -464,7 +472,8 @@ main(void)
 	init_bm_tables();
 
 	const unsigned char *const restrict test
-	= (const unsigned char *) "ooga booga booooooga looga" KEY "snooga";
+	= (const unsigned char *) "ooga booga booooooga loKEY" KEY "snooga";
+	/* = (const unsigned char *) "aaaaa booga baoooooaaaaga aaab" KEY "snooga"; */
 
 	const int index = bm_search(test);
 
