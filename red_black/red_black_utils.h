@@ -15,7 +15,7 @@ enum Color {
 };
 
 struct RedBlackNode {
-	struct Key *key;
+	const struct Key *key;
 	enum Color color;
 	struct RedBlackNode *left;
 	struct RedBlackNode *right;
@@ -24,8 +24,8 @@ struct RedBlackNode {
 
 
 bool
-red_black_is_member(const struct RedBlackNode *restrict node,
-		    const struct Key *const restrict key);
+red_black_find(const struct RedBlackNode *restrict node,
+	       const struct Key *const restrict key);
 
 void
 red_black_insert(struct RedBlackNode *restrict *restrict tree,

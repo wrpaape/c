@@ -28,39 +28,36 @@ exit_on_success(const char *const restrict message,
 	__builtin_unreachable();
 }
 
-
-static inline void
-get_string(const unsigned char *restrict *const restrict string,
-	   size_t *const restrict length)
+static inline const unsigned char *
+store_string(const unsigned char *restrict string,
+	     const size_t length)
 {
 	static unsigned char buffer[2048];
 	static size_t rem_size		     = sizeof(buffer);
 	static unsigned char *restrict alloc = &buffer[0];
 
-	const ssize_t size_read = read(STDIN_FILENO,
-				       alloc,
-				       rem_size);
+	if (length < rem_size) {
 
-	if (size_read >= 0) {
-		if (size_read < (ssize_t) rem_size) {
-			*string = alloc;
-			*length = (size_t) size_read;
+		(void) memcpy(alloc,
+			      string,
+			      length);
 
-			const size_t size_string = size_read + 1;
+		alloc[length] = '\0';
 
-			alloc	 += size_string;
-			rem_size -= size_string;
-			return;
+		const unsigned char *const restrict store = alloc;
+		const size_t size = length + 1;
 
-		} else {
-			EXIT_ON_FAILURE("get_string failure: out of space");
-		}
-	} else {
-		EXIT_ON_FAILURE("get_string failure: read");
+		alloc    += size;
+		rem_size -= size;
+		return store;
 	}
+
+	EXIT_ON_FAILURE("store_string failure: out of space");
 	__builtin_unreachable();
 }
 
+
+#if 0
 /* taken from bob jenkin's website */
 /* The mixing step */
 #define mix64(a, b, c)							    \
@@ -144,6 +141,7 @@ jhash64(register const unsigned char *k, /* the key */
 	return c;
 }
 #undef mix64
+#endif
 
 /* The mixing step */
 #define mix32(a, b, c)							    \
@@ -219,32 +217,44 @@ hash_string(const unsigned char *const restrict string,
 				  0xfedcba98);
 }
 
-
 struct Key *
-get_key(void)
+pop_key(void)
 {
 	static struct Key buffer[128];
 	static struct Key *restrict alloc	      = &buffer[0];
 	static struct Key *const restrict alloc_until = &buffer[128];
 
-
 	if (alloc < alloc_until) {
-		size_t length;
 		struct Key *const restrict key = alloc;
 		++alloc;
-
-		get_string(&key->string,
-			   &length);
-
-		key->hash = hash_string(key->string,
-					length);
-
-
 		return key;
 	}
 
-	EXIT_ON_FAILURE("get_key failure: out of space");
+	EXIT_ON_FAILURE("pop_key failure: out of space");
 	__builtin_unreachable();
+}
+
+
+void
+make_key(struct Key *const restrict key,
+	 const unsigned char *const restrict string,
+	 const size_t length)
+{
+	key->hash = hash_string(string,
+				length);
+
+	key->string = store_string(string,
+				   length);
+}
+
+void
+key_init(struct Key *const restrict key,
+	 const unsigned char *const restrict string,
+	 const size_t length)
+{
+	key->hash = hash_string(string,
+				length);
+	key->string = string;
 }
 
 static inline int64_t
@@ -278,7 +288,6 @@ key_compare(const struct Key *const restrict key1,
 			      key2->string)
 	     : key1->hash - key2->hash;
 }
-
 
 #if 0
 #include <stdio.h>

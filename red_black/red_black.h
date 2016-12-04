@@ -22,14 +22,17 @@ if (write(STDOUT_FILENO,						\
 	  sizeof(LITERAL) - 1) < 0)					\
 	EXIT_ON_FAILURE("write failure")
 
+#define READ_INPUT(BUFFER)						\
+read(STDIN_FILENO,							\
+     BUFFER,								\
+     sizeof(BUFFER) - 1)
+
 #define GET_CHAR(PROMPT,						\
 		 BUFFER)						\
-WRITE_LITERAL(PROMPT)							\
+WRITE_LITERAL(PROMPT);							\
 ssize_t _size_read;							\
 do {									\
-	_size_read = read(STDIN_FILENO,					\
-			  BUFFER,					\
-			  sizeof(BUFFER));				\
+	_size_read = READ_INPUT(BUFFER);				\
 	if (_size_read >= 0) {						\
 		if ((_size_read > 0) && (_size_read < 3))		\
 			break;						\

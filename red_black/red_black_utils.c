@@ -20,8 +20,8 @@ node_alloc_pop(void)
 
 
 bool
-red_black_is_member(const struct RedBlackNode *restrict node,
-		    const struct Key *const restrict key)
+red_black_find(const struct RedBlackNode *restrict node,
+	       const struct Key *const restrict key)
 {
 	int64_t compare;
 

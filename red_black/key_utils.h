@@ -6,6 +6,7 @@
 #include <unistd.h>	/* read, write */
 #include <stdlib.h>	/* exit */
 #include <stdint.h>	/* u|int32|64_t */
+#include <string.h>	/* memcpy */
 
 /* helper macros
  * ────────────────────────────────────────────────────────────────────────── */
@@ -35,9 +36,18 @@ exit_on_success(const char *const restrict message,
 		const size_t length_message)
 __attribute__((noreturn));
 
-
 struct Key *
-get_key(void);
+pop_key(void);
+
+void
+make_key(struct Key *const restrict key,
+	 const unsigned char *const restrict string,
+	 const size_t length);
+
+void
+key_init(struct Key *const restrict key,
+	 const unsigned char *const restrict string,
+	 const size_t length);
 
 int64_t
 key_compare(const struct Key *const restrict key1,
