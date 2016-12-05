@@ -1,5 +1,5 @@
 CC		:= gcc
-CC_FLAGS	:= -std=gnu99 -I. -g -Wall -c
+CC_FLAGS	:= -std=gnu99 -I. -Wall -c
 LD		:= ld
 LD_FLAGS	:= -arch x86_64 -macosx_version_min 10.11 -no_pie
 RM		:= rm
@@ -22,4 +22,3 @@ key_utils.o: key_utils.c key_utils.h
 
 clean:
 	$(RM) $(RM_FLAGS) red_black red_black.o red_black_utils.o key_utils.o
-
