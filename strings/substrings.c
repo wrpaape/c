@@ -325,7 +325,7 @@ length_common_suffix(const unsigned char *const restrict string_upto,
 }
 
 
-#define KEY "aaaaabaaaaa"
+#define KEY "access_token="
 
 const unsigned char *const bm_key = (const unsigned char *) KEY;
 
@@ -393,9 +393,9 @@ init_bm_tables(void)
 		++i_next;
 	} while (i_next < LENGTH_BM_KEY);
 
-	/* for (int i = 0; i <= UCHAR_MAX; ++i) */
-	/* 	printf(", %d", bad_char_skip[i]); */
-	/* puts("\n"); */
+	for (int i = 0; i <= UCHAR_MAX; ++i)
+		printf(", %d", bad_char_skip[i]);
+	puts("\n");
 
 	for (int i = 0; i < LENGTH_BM_KEY; ++i)
 		printf(", %d", good_suffix_skip[i]);
@@ -445,6 +445,45 @@ bm_search(const unsigned char *const restrict text)
 	return -1;
 }
 
+static inline const unsigned char *
+bm_search2(const unsigned char *restrict text)
+{
+	unsigned int token;
+	unsigned int i_match;
+
+	const int length_text = (int) string_length(text);
+
+	if (length_text < LENGTH_BM_KEY)
+		return NULL;
+
+	const unsigned char *const restrict text_until = text + length_text;
+
+	do {
+		i_match = I_LAST;
+
+		printf("comparing \"%.*s\" with \"%s\"\n",
+		       (int) LENGTH_BM_KEY, text, bm_key);
+
+		while (1) {
+			token = (unsigned int) text[i_match];
+
+			if (token != bm_key[i_match])
+				break;
+
+			if (i_match == 0)
+				return text + LENGTH_BM_KEY;
+
+			--i_match;
+		}
+
+		printf("bad_char_skip: %d\n", bad_char_skip[token]);
+
+		text += max(bad_char_skip[token], 1);
+	} while (text < text_until);
+
+	return NULL;
+}
+
 
 
 
@@ -472,15 +511,16 @@ main(void)
 	init_bm_tables();
 
 	const unsigned char *const restrict test
-	= (const unsigned char *) "ooga booga booooooga loKEY" KEY "snooga";
+	= (const unsigned char *) "ooga booga boooaccess_token loKEY" KEY "snooga";
 	/* = (const unsigned char *) "aaaaa booga baoooooaaaaga aaab" KEY "snooga"; */
 
-	const int index = bm_search(test);
+	printf("found = %s\n", bm_search2(test));
+	/* const int index = bm_search(test); */
 
-	if (index >= 0)
-		printf("found bm_key at index: %d\n", index);
-	else
-		puts("failed to find bm_key");
+	/* if (index >= 0) */
+	/* 	printf("found bm_key at index: %d\n", index); */
+	/* else */
+	/* 	puts("failed to find bm_key"); */
 
 
 	return exit_status;
