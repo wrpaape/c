@@ -103,3 +103,62 @@ red_black_insert(struct RedBlackNode *restrict *restrict tree,
 	     ? parent->left
 	     : parent->right;
 }
+
+static inline char *
+put_indent(char *restrict buffer,
+	   const unsigned int level)
+{
+	char *const restrict indent_until = buffer + level;
+
+	while (buffer < indent_until) {
+		*buffer = ' ';
+		++buffer;
+	}
+
+	return buffer;
+}
+
+static inline char *
+put_red_black_null(char *restrict buffer,
+		   const unsigned int level)
+{
+}
+
+static inline char *
+put_red_black_node(char *restrict buffer,
+		   const struct RedBlackNode *const restrict node,
+		   const unsigned int level)
+{
+
+}
+
+char *
+do_red_black_print(const restrict RedBlackNode *const restrict node)
+{
+}
+
+
+void
+red_black_print(const struct RedBlackNode *const restrict tree)
+{
+	static char buffer[2048];
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

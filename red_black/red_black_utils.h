@@ -31,4 +31,7 @@ void
 red_black_insert(struct RedBlackNode *restrict *restrict tree,
 		 const struct Key *const restrict key);
 
+void
+red_black_print(const struct RedBlackNode *const restrict tree);
+
 #endif /* ifndef RED_BLACK_UTILS_H_ */
