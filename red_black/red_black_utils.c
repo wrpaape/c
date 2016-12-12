@@ -136,16 +136,20 @@ red_black_insert(struct RedBlackNode *restrict *restrict tree,
 				compare = key_compare(parent->key,
 						      key);
 
-				if (compare < 0)
+				if (compare < 0) {
 					(void) rb_insert_ll(tree,
 							    grandparent,
 							    parent,
 							    key);
-				else if (compare > 0)
+					(*tree)->color = BLACK;
+
+				} else if (compare > 0) {
 					(void) rb_insert_lr(tree,
 							    grandparent,
 							    parent,
 							    key);
+					(*tree)->color = BLACK;
+				}
 			}
 
 		} else if (compare > 0) {
@@ -159,16 +163,20 @@ red_black_insert(struct RedBlackNode *restrict *restrict tree,
 				compare = key_compare(parent->key,
 						      key);
 
-				if (compare < 0)
+				if (compare < 0) {
 					(void) rb_insert_rl(tree,
 							    grandparent,
 							    parent,
 							    key);
-				else if (compare > 0)
+					(*tree)->color = BLACK;
+
+				} else if (compare > 0) {
 					(void) rb_insert_rr(tree,
 							    grandparent,
 							    parent,
 							    key);
+					(*tree)->color = BLACK;
+				}
 			}
 		}
 	}
@@ -209,15 +217,22 @@ rb_insert_ll(struct RedBlackNode *restrict *const restrict tree,
 						     key);
 
 		if (compare < 0) {
-			if (rb_insert_ll(&grandparent->parent,
+			if (rb_insert_ll(&grandparent->left,
 					 parent,
 					 next,
 					 key)) {
 				parent->color = RED;
 
+				uncle = grandparent->right;
+
+				if (uncle->color == RED) {
+					uncle->color = BLACK;
+					return true;
+				}
+
 			}
 		} else if (compare > 0) {
-			if (rb_insert_lr(&grandparent->parent,
+			if (rb_insert_lr(&grandparent->left,
 					 parent,
 					 next,
 					 key)) {
