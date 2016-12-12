@@ -25,6 +25,8 @@ insert_mode(void)
 			if (input[1] != '\n')
 				break;
 
+			--size_read; /* trim '\n' */
+
 		case 1:
 			switch (input[0]) {
 			case 'b':
@@ -33,12 +35,16 @@ insert_mode(void)
 			case 'q':
 				return false;
 
+			case 'p':
+				red_black_print(tree);
+				continue;
+
 			default:
 				break;
 			}
 
 		default:
-			break;
+			--size_read; /* trim '\n' */
 		}
 
 		key = pop_key();
@@ -74,6 +80,10 @@ main(void)
 			 input);
 
 		switch (input[0]) {
+		case 'p':
+			red_black_print(tree);
+			break;
+
 		case 'd':
 			if (delete_mode())
 				break;

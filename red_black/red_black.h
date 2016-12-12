@@ -9,10 +9,10 @@
 /* prompts
  * ────────────────────────────────────────────────────────────────────────── */
 #define INVALID_INPUT	"invalid input\n"
-#define MAIN_PROMPT	"insert (i), find (f), delete (d), quit (q)\n> "
-#define INSERT_PROMPT	"input insert string, back (b), or quit (q)\n> "
-#define FIND_PROMPT	"input find string, back (b), or quit (q)\n> "
-#define DELETE_PROMPT	"input delete string, back (b), or quit (q)\n> "
+#define MAIN_PROMPT	"insert (i), find (f), delete (d), print (p), or  quit (q)\n> "
+#define INSERT_PROMPT	"input insert string, back (b), print (p), or quit (q)\n> "
+#define FIND_PROMPT	"input find string, back (b), print (p), or quit (q)\n> "
+#define DELETE_PROMPT	"input delete string, back (b), print (p), or quit (q)\n> "
 
 /* helpful macros
  * ────────────────────────────────────────────────────────────────────────── */

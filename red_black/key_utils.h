@@ -7,6 +7,7 @@
 #include <stdlib.h>	/* exit */
 #include <stdint.h>	/* u|int32|64_t */
 #include <string.h>	/* memcpy */
+#include <stdio.h>	/* sprintf */
 
 /* helper macros
  * ────────────────────────────────────────────────────────────────────────── */
@@ -17,6 +18,13 @@ exit_on_failure(FAILURE "\n",						\
 #define EXIT_ON_SUCCESS(SUCCESS)					\
 exit_on_success(SUCCESS "\n",						\
 		sizeof(SUCCESS))
+
+#define WRITE_STDOUT(BUFFER,						\
+		     SIZE)						\
+if (write(STDOUT_FILENO,						\
+	  BUFFER,							\
+	  SIZE) < 0)							\
+	EXIT_ON_FAILURE("write failure")
 
 
 /* struct declarations
@@ -53,5 +61,8 @@ int64_t
 key_compare(const struct Key *const restrict key1,
 	    const struct Key *const restrict key2);
 
+char *
+put_key(char *restrict buffer,
+	const struct Key *const restrict key);
 
 #endif /* ifndef KEY_UTILS_H_ */

@@ -289,6 +289,53 @@ key_compare(const struct Key *const restrict key1,
 	     : key1->hash - key2->hash;
 }
 
+
+static inline char *
+put_string(char *restrict buffer,
+	   const char *restrict string)
+{
+	while (*string != '\0') {
+		*buffer = *string;
+		++buffer;
+		++string;
+	}
+
+	return buffer;
+}
+
+static inline char *
+put_uint(char *const restrict buffer,
+	 const uintmax_t n)
+{
+	return buffer + sprintf(buffer,
+				"%zu",
+				n);
+}
+
+char *
+put_key(char *restrict buffer,
+	const struct Key *const restrict key)
+{
+	*buffer = '{'; ++buffer;
+	*buffer = ' '; ++buffer;
+
+	buffer = put_uint(buffer,
+			  (uintmax_t) key->hash);
+
+	*buffer = ':'; ++buffer;
+	*buffer = ' '; ++buffer;
+	*buffer = '"'; ++buffer;
+
+	buffer = put_string(buffer,
+			    (const char *) key->string);
+
+	*buffer = '"'; ++buffer;
+	*buffer = ' '; ++buffer;
+	*buffer = '}';
+
+	return buffer + 1;
+}
+
 #if 0
 #include <stdio.h>
 
