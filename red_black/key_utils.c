@@ -37,7 +37,6 @@ store_string(const unsigned char *restrict string,
 	static unsigned char *restrict alloc = &buffer[0];
 
 	if (length < rem_size) {
-
 		(void) memcpy(alloc,
 			      string,
 			      length);

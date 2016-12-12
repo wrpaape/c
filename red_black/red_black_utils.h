@@ -14,6 +14,12 @@ enum Color {
 	BLACK
 };
 
+enum RedBlackCorrectState {
+	CORRECT_PREV,
+	CORRECT_THIS,
+	CORRECT_DONE
+};
+
 struct RedBlackNode {
 	const struct Key *key;
 	enum Color color;
