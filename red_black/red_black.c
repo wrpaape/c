@@ -25,7 +25,7 @@ insert_mode(void)
 			if (input[1] != '\n')
 				break;
 
-			--size_read; /* trim '\n' */
+			/* fall through */
 
 		case 1:
 			switch (input[0]) {
@@ -39,8 +39,7 @@ insert_mode(void)
 				red_black_print(tree);
 				continue;
 
-			default:
-				break;
+			default: /* fall through */;
 			}
 
 		default:
