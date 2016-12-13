@@ -87,11 +87,11 @@ rb_rotate_right_left(struct RedBlackNode *restrict *const restrict tree,
 {
 	*tree = lchild;
 
-	rparent->left = lchild->right;
-	lchild->right = rparent;
-
 	grandparent->right = lchild->left;
 	lchild->left       = grandparent;
+
+	rparent->left = lchild->right;
+	lchild->right = rparent;
 }
 
 
