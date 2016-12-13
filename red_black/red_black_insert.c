@@ -1,8 +1,9 @@
-#include "red_black_utils.h"
+#include "red_black_insert.h"
 
 static inline struct RedBlackNode *
-node_alloc_pop(void)
+rb_new_node(const struct Key *const restrict key)
 {
+	/* static alloc, all pointers == NULL, color == RED */
 	static struct RedBlackNode buffer[128];
 	static struct RedBlackNode *restrict alloc	       = &buffer[0];
 	static struct RedBlackNode *const restrict alloc_until = &buffer[128];
@@ -11,33 +12,12 @@ node_alloc_pop(void)
 		struct RedBlackNode *const restrict node = alloc;
 		++alloc;
 
+		node->key = key;
 		return node;
 	}
 
 	EXIT_ON_FAILURE("node_alloc_pop failure: out of space");
 	__builtin_unreachable();
-}
-
-
-bool
-red_black_find(const struct RedBlackNode *restrict node,
-	       const struct Key *const restrict key)
-{
-	int64_t compare;
-
-	while (node != NULL) {
-		compare = key_compare(node->key,
-				      key);
-
-		if (compare < 0)
-			node = node->left;
-		else if (compare > 0)
-			node = node->right;
-		else
-			return true;
-	}
-
-	return false;
 }
 
 static inline void
@@ -94,17 +74,6 @@ rb_rotate_right_left(struct RedBlackNode *restrict *const restrict tree,
 	lchild->right = rparent;
 }
 
-
-static inline struct RedBlackNode *
-rb_new_node(const struct Key *const restrict key)
-{
-	/* static alloc, all pointers == NULL, color == RED */
-	struct RedBlackNode *const restrict node = node_alloc_pop();
-	node->key = key;
-
-	return node;
-}
-
 static inline void
 rb_insert_root(struct RedBlackNode *restrict *const restrict tree,
 	       const struct Key *const restrict key)
@@ -139,7 +108,7 @@ rb_insert_rr(struct RedBlackNode *restrict *const restrict tree,
 
 
 void
-red_black_insert(struct RedBlackNode *restrict *restrict tree,
+red_black_insert(struct RedBlackNode *restrict *const restrict tree,
 		 const struct Key *const restrict key)
 {
 	int64_t compare;
@@ -504,133 +473,3 @@ rb_insert_rl(struct RedBlackNode *restrict *const restrict tree,
 
 	return CORRECT_DONE;
 }
-
-static inline char *
-put_indent(char *restrict buffer,
-	   const unsigned int level)
-{
-	char *const restrict indent_until = buffer + (2 * level);
-
-	while (buffer < indent_until) {
-		*buffer = '\t';
-		++buffer;
-		*buffer = '\t';
-		++buffer;
-	}
-
-	return buffer;
-}
-
-static inline char *
-put_red_black_null(char *restrict buffer,
-		   const unsigned int level)
-{
-	buffer = put_indent(buffer,
-			    level);
-
-	*buffer = '('; ++buffer;
-	*buffer = 'B'; ++buffer;
-	*buffer = 'L'; ++buffer;
-	*buffer = 'A'; ++buffer;
-	*buffer = 'C'; ++buffer;
-	*buffer = 'K'; ++buffer;
-	*buffer = ')'; ++buffer;
-	*buffer = ' '; ++buffer;
-	*buffer = 'N'; ++buffer;
-	*buffer = 'U'; ++buffer;
-	*buffer = 'L'; ++buffer;
-	*buffer = 'L'; ++buffer;
-	*buffer = '\n';
-
-	return buffer + 1;
-}
-
-static inline char *
-put_red_black_node(char *restrict buffer,
-		   const unsigned int level,
-		   const struct RedBlackNode *const restrict node)
-{
-	buffer = put_indent(buffer,
-			    level);
-
-	*buffer = '('; ++buffer;
-
-	if (node->color == RED) {
-		*buffer = 'R'; ++buffer;
-		*buffer = 'E'; ++buffer;
-		*buffer = 'D'; ++buffer;
-
-	} else {
-		*buffer = 'B'; ++buffer;
-		*buffer = 'L'; ++buffer;
-		*buffer = 'A'; ++buffer;
-		*buffer = 'C'; ++buffer;
-		*buffer = 'K'; ++buffer;
-	}
-
-	*buffer = ')'; ++buffer;
-	*buffer = ' '; ++buffer;
-
-	buffer = put_key(buffer,
-			 node->key);
-
-	*buffer = '\n';
-
-	return buffer + 1;
-}
-
-char *
-do_red_black_print(char *restrict buffer,
-		   const unsigned int level,
-		   const struct RedBlackNode *const restrict node)
-{
-	if (node == NULL)
-		return put_red_black_null(buffer,
-					  level);
-
-	const unsigned int next_level = level + 1;
-
-	buffer = do_red_black_print(buffer,
-				    next_level,
-				    node->left);
-
-	buffer = put_red_black_node(buffer,
-				    level,
-				    node);
-
-	return do_red_black_print(buffer,
-				  next_level,
-				  node->right);
-}
-
-
-void
-red_black_print(const struct RedBlackNode *const restrict tree)
-{
-	char buffer[4096];
-
-	char *const restrict ptr = do_red_black_print(&buffer[0],
-						      0,
-						      tree);
-
-	WRITE_STDOUT(&buffer[0],
-		     ptr - &buffer[0]);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

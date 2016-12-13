@@ -3,8 +3,10 @@
 
 /* external dependencies
  * ────────────────────────────────────────────────────────────────────────── */
-#include "red_black_utils.h"
-
+#include "red_black_insert.h"
+#include "red_black_delete.h"
+#include "red_black_find.h"
+#include "red_black_print.h"
 
 /* prompts
  * ────────────────────────────────────────────────────────────────────────── */
