@@ -64,6 +64,37 @@ rb_rotate_right(struct RedBlackNode *restrict *const restrict tree,
 	grandparent->left = tmp;
 }
 
+static inline void
+rb_rotate_left_right(struct RedBlackNode *restrict *const restrict tree,
+		     struct RedBlackNode *const restrict grandparent,
+		     struct RedBlackNode *const restrict lparent,
+		     struct RedBlackNode *const restrict rchild)
+{
+	*tree = rchild;
+
+	lparent->right = rchild->left;
+	rchild->left   = lparent;
+
+	grandparent->left = rchild->right;
+	rchild->right     = grandparent;
+}
+
+static inline void
+rb_rotate_right_left(struct RedBlackNode *restrict *const restrict tree,
+		     struct RedBlackNode *const restrict grandparent,
+		     struct RedBlackNode *const restrict rparent,
+		     struct RedBlackNode *const restrict lchild)
+{
+	*tree = lchild;
+
+	rparent->left = lchild->right;
+	lchild->right = rparent;
+
+	grandparent->right = lchild->left;
+	lchild->left       = grandparent;
+}
+
+
 static inline struct RedBlackNode *
 rb_new_node(const struct Key *const restrict key)
 {
@@ -199,27 +230,26 @@ rb_insert_correct_ll(struct RedBlackNode *restrict *const restrict tree,
 static inline enum RedBlackCorrectState
 rb_insert_correct_lr(struct RedBlackNode *restrict *const restrict tree,
 		     struct RedBlackNode *const restrict grandparent,
-		     struct RedBlackNode *const restrict parent)
+		     struct RedBlackNode *const restrict parent,
+		     struct RedBlackNode *const restrict child)
 {
 	if (parent->color == RED) {
-		parent->color = BLACK;
-
 		struct RedBlackNode *const restrict uncle = grandparent->right;
 
 		if ((uncle != NULL) && (uncle->color == RED)) {
-			uncle->color = BLACK;
+			uncle->color  = BLACK;
+			parent->color = BLACK;
 			return CORRECT_PREV; /* need to propogate recolor */
 		}
 
 		grandparent->color = RED;
 
-		rb_rotate_left(&grandparent->left,
-			       parent,
-			       parent->right);
+		child->color = BLACK;
 
-		rb_rotate_right(tree,
-				grandparent,
-				parent);
+		rb_rotate_left_right(tree,
+				     grandparent,
+				     parent,
+				     child);
 	}
 
 	return CORRECT_DONE;
@@ -254,27 +284,26 @@ rb_insert_correct_rr(struct RedBlackNode *restrict *const restrict tree,
 static inline enum RedBlackCorrectState
 rb_insert_correct_rl(struct RedBlackNode *restrict *const restrict tree,
 		     struct RedBlackNode *const restrict grandparent,
-		     struct RedBlackNode *const restrict parent)
+		     struct RedBlackNode *const restrict parent,
+		     struct RedBlackNode *const restrict child)
 {
 	if (parent->color == RED) {
-		parent->color = BLACK;
-
 		struct RedBlackNode *const restrict uncle = grandparent->left;
 
 		if ((uncle != NULL) && (uncle->color == RED)) {
-			uncle->color = BLACK;
+			uncle->color  = BLACK;
+			parent->color = BLACK;
 			return CORRECT_PREV; /* need to propogate recolor */
 		}
 
 		grandparent->color = RED;
 
-		rb_rotate_right(&grandparent->right,
-				parent,
-				parent->left);
+		child->color = BLACK;
 
-		rb_rotate_left(tree,
-			       grandparent,
-			       parent);
+		rb_rotate_right_left(tree,
+				     grandparent,
+				     parent,
+				     child);
 	}
 
 	return CORRECT_DONE;
@@ -338,10 +367,12 @@ rb_insert_lr(struct RedBlackNode *restrict *const restrict tree,
 	struct RedBlackNode *const restrict next = parent->right;
 
 	if (next == NULL) {
-		parent->right = rb_new_node(key);
+		struct RedBlackNode *const restrict node = rb_new_node(key);
+		parent->right = node;
 		return rb_insert_correct_lr(tree,
 					    grandparent,
-					    parent);
+					    parent,
+					    node);
 	}
 
 	const int64_t compare = key_compare(next->key,
@@ -369,7 +400,8 @@ rb_insert_lr(struct RedBlackNode *restrict *const restrict tree,
 		} else if (state == CORRECT_THIS) {
 			return rb_insert_correct_lr(tree,
 						    grandparent,
-						    parent);
+						    parent,
+						    parent->right);
 		}
 	}
 
@@ -432,10 +464,12 @@ rb_insert_rl(struct RedBlackNode *restrict *const restrict tree,
 	struct RedBlackNode *const restrict next = parent->left;
 
 	if (next == NULL) {
-		parent->left = rb_new_node(key);
+		struct RedBlackNode *const restrict node = rb_new_node(key);
+		parent->left = node;
 		return rb_insert_correct_rl(tree,
 					    grandparent,
-					    parent);
+					    parent,
+					    node);
 	}
 
 	const int64_t compare = key_compare(next->key,
@@ -463,7 +497,8 @@ rb_insert_rl(struct RedBlackNode *restrict *const restrict tree,
 		} else if (state == CORRECT_THIS) {
 			return rb_insert_correct_rl(tree,
 						    grandparent,
-						    parent);
+						    parent,
+						    parent->left);
 		}
 	}
 
