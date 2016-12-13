@@ -282,10 +282,12 @@ int64_t
 key_compare(const struct Key *const restrict key1,
 	    const struct Key *const restrict key2)
 {
+	/* return string_compare(key1->string, */
+	/* 		      key2->string); */
 	return (key1->hash == key2->hash)
 	     ? string_compare(key1->string,
 			      key2->string)
-	     : key1->hash - key2->hash;
+	     : key2->hash - key1->hash;
 }
 
 
