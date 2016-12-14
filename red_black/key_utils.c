@@ -56,6 +56,7 @@ store_string(const unsigned char *restrict string,
 }
 
 
+#if USE_HASH
 #if 0
 /* taken from bob jenkin's website */
 /* The mixing step */
@@ -206,7 +207,6 @@ jhash32(register const unsigned char *k,  /* the key */
 }
 #undef mix32
 
-
 static inline uint64_t
 hash_string(const unsigned char *const restrict string,
 	    const size_t length)
@@ -215,6 +215,7 @@ hash_string(const unsigned char *const restrict string,
 				  length,
 				  0xfedcba98);
 }
+#endif /* if USE_HASH */
 
 struct Key *
 pop_key(void)
@@ -239,8 +240,10 @@ make_key(struct Key *const restrict key,
 	 const unsigned char *const restrict string,
 	 const size_t length)
 {
+#if USE_HASH
 	key->hash = hash_string(string,
 				length);
+#endif /* if USE_HASH */
 
 	key->string = store_string(string,
 				   length);
@@ -251,8 +254,10 @@ key_init(struct Key *const restrict key,
 	 const unsigned char *const restrict string,
 	 const size_t length)
 {
+#if USE_HASH
 	key->hash = hash_string(string,
 				length);
+#endif /* if USE_HASH */
 	key->string = string;
 }
 
@@ -260,12 +265,12 @@ static inline int64_t
 string_compare(const unsigned char *restrict string1,
 	       const unsigned char *restrict string2)
 {
-	unsigned int token1;
-	unsigned int token2;
+	int token1;
+	int token2;
 
 	while (1) {
-		token1 = (unsigned int) *string1;
-		token2 = (unsigned int) *string2;
+		token1 = (int) *string1;
+		token2 = (int) *string2;
 
 		if (token1 != token2)
 			return (int64_t) (token1 - token2);
@@ -282,12 +287,15 @@ int64_t
 key_compare(const struct Key *const restrict key1,
 	    const struct Key *const restrict key2)
 {
-	/* return string_compare(key1->string, */
-	/* 		      key2->string); */
+#if USE_HASH
 	return (key1->hash == key2->hash)
 	     ? string_compare(key1->string,
 			      key2->string)
-	     : key2->hash - key1->hash;
+	     : key1->hash - key2->hash;
+#else
+	return string_compare(key1->string,
+			      key2->string);
+#endif /* if USE_HASH */
 }
 
 
@@ -304,6 +312,7 @@ put_string(char *restrict buffer,
 	return buffer;
 }
 
+#if USE_HASH
 static inline char *
 put_uint(char *const restrict buffer,
 	 const uintmax_t n)
@@ -312,11 +321,13 @@ put_uint(char *const restrict buffer,
 				"%zu",
 				n);
 }
+#endif /* if USE_HASH */
 
 char *
 put_key(char *restrict buffer,
 	const struct Key *const restrict key)
 {
+#if USE_HASH
 	*buffer = '{'; ++buffer;
 	*buffer = ' '; ++buffer;
 
@@ -325,16 +336,19 @@ put_key(char *restrict buffer,
 
 	*buffer = ':'; ++buffer;
 	*buffer = ' '; ++buffer;
+#endif /* if USE_HASH */
 	*buffer = '"'; ++buffer;
 
 	buffer = put_string(buffer,
 			    (const char *) key->string);
 
 	*buffer = '"'; ++buffer;
+#if USE_HASH
 	*buffer = ' '; ++buffer;
-	*buffer = '}';
+	*buffer = '}'; ++buffer;
+#endif /* if USE_HASH */
 
-	return buffer + 1;
+	return buffer;
 }
 
 #if 0

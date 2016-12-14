@@ -1,6 +1,8 @@
 #ifndef KEY_UTILS_H_
 #define KEY_UTILS_H_
 
+#define USE_HASH 0
+
 /* external dependencies
  * ────────────────────────────────────────────────────────────────────────── */
 #include <unistd.h>	/* read, write */
@@ -30,7 +32,9 @@ if (write(STDOUT_FILENO,						\
 /* struct declarations
  * ────────────────────────────────────────────────────────────────────────── */
 struct Key {
+#if USE_HASH
 	int64_t hash;
+#endif /* if USE_HASH */
 	const unsigned char *string;
 };
 
