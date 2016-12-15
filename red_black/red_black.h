@@ -73,8 +73,10 @@ case 1:									\
 	case 'p':							\
 		red_black_print(tree);					\
 		continue;						\
-	default: /* fall through */;					\
+	default:							\
+		SIZE_READ = 1;						\
 	}								\
+	break;								\
 default:								\
 	--SIZE_READ; /* trim '\n' */					\
 }

@@ -40,35 +40,6 @@ do_red_black_verify(void)
 		     ptr - &buffer[0]);
 }
 
-static inline bool
-insert_mode(void)
-{
-	unsigned char input[128];
-	struct Key *restrict key;
-	ssize_t size_read;
-
-	while (1) {
-		GET_INPUT(INSERT,
-			  input,
-			  size_read);
-
-		key = pop_key();
-
-		make_key(key,
-			 &input[0],
-			 (size_t) size_read);
-
-		red_black_insert(&tree,
-				 key);
-	}
-}
-
-static inline bool
-delete_mode(void)
-{
-	return true;
-}
-
 static inline void
 do_find_mode(const struct Key *const restrict key)
 {
@@ -117,6 +88,35 @@ do_find_mode(const struct Key *const restrict key)
 
 	WRITE_STDOUT(&buffer[0],
 		     ptr - &buffer[0]);
+}
+
+static inline bool
+insert_mode(void)
+{
+	unsigned char input[128];
+	struct Key *restrict key;
+	ssize_t size_read;
+
+	while (1) {
+		GET_INPUT(INSERT,
+			  input,
+			  size_read);
+
+		key = pop_key();
+
+		make_key(key,
+			 &input[0],
+			 (size_t) size_read);
+
+		red_black_insert(&tree,
+				 key);
+	}
+}
+
+static inline bool
+delete_mode(void)
+{
+	return true;
 }
 
 static inline bool

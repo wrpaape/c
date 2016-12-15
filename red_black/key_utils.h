@@ -43,11 +43,11 @@ struct Key {
 /* limits
  * ────────────────────────────────────────────────────────────────────────── */
 #if USE_HASH
-#define HASH_MIN 0
-#define HASH_MAX INT64_MAX
+#define HASH_MAX (((int64_t) UINT32_MAX) + 1)
+#define HASH_MIN (-HASH_MAX)
 #endif /* if USE_HASH */
-#define STRING_MIN (const unsigned char *) "\x00"
 #define STRING_MAX (const unsigned char *) "\xFF"
+#define STRING_MIN (const unsigned char *) "\x00"
 
 /* global variables
  * ────────────────────────────────────────────────────────────────────────── */

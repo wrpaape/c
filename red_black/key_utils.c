@@ -223,13 +223,13 @@ jhash32(register const unsigned char *k,  /* the key */
 }
 #undef mix32
 
-static inline uint64_t
+static inline int64_t
 hash_string(const unsigned char *const restrict string,
 	    const size_t length)
 {
-	return (uint64_t) jhash32(string,
-				  length,
-				  0xfedcba98);
+	return (int64_t) jhash32(string,
+				 length,
+				 0xfedcba98);
 }
 #endif /* if USE_HASH */
 
