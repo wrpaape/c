@@ -48,45 +48,9 @@ insert_mode(void)
 	ssize_t size_read;
 
 	while (1) {
-		WRITE_LITERAL(INSERT_PROMPT);
-		size_read = READ_INPUT(input);
-
-		switch (size_read) {
-		case -1:
-			EXIT_ON_FAILURE("read failure");
-
-		case 0:
-			WRITE_LITERAL(INVALID_INPUT);
-			continue;
-
-		case 2:
-			if (input[1] != '\n')
-				break;
-
-			/* fall through */
-
-		case 1:
-			switch (input[0]) {
-			case 'b':
-				return true;
-
-			case 'q':
-				return false;
-
-			case 'v':
-				do_red_black_verify();
-				continue;
-
-			case 'p':
-				red_black_print(tree);
-				continue;
-
-			default: /* fall through */;
-			}
-
-		default:
-			--size_read; /* trim '\n' */
-		}
+		GET_INPUT(INSERT,
+			  input,
+			  size_read);
 
 		key = pop_key();
 
@@ -163,45 +127,9 @@ find_mode(void)
 	ssize_t size_read;
 
 	while (1) {
-		WRITE_LITERAL(FIND_PROMPT);
-		size_read = READ_INPUT(input);
-
-		switch (size_read) {
-		case -1:
-			EXIT_ON_FAILURE("read failure");
-
-		case 0:
-			WRITE_LITERAL(INVALID_INPUT);
-			continue;
-
-		case 2:
-			if (input[1] != '\n')
-				break;
-
-			/* fall through */
-
-		case 1:
-			switch (input[0]) {
-			case 'b':
-				return true;
-
-			case 'q':
-				return false;
-
-			case 'v':
-				do_red_black_verify();
-				continue;
-
-			case 'p':
-				red_black_print(tree);
-				continue;
-
-			default: /* fall through */;
-			}
-
-		default:
-			--size_read; /* trim '\n' */
-		}
+		GET_INPUT(FIND,
+			  input,
+			  size_read);
 
 		input[size_read] = '\0';
 

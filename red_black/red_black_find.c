@@ -7,8 +7,8 @@ red_black_find(const struct RedBlackNode *restrict node,
 	int64_t compare;
 
 	while (node != NULL) {
-		compare = key_compare(node->key,
-				      key);
+		compare = key_compare(key,
+				      node->key);
 
 		if (compare < 0)
 			node = node->left;

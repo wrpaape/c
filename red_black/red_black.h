@@ -45,4 +45,38 @@ do {									\
 	}								\
 } while (1)
 
+
+#define GET_INPUT(MODE,							\
+		  BUFFER,						\
+		  SIZE_READ)						\
+WRITE_LITERAL(MODE ## _PROMPT);						\
+SIZE_READ = READ_INPUT(input);						\
+switch (SIZE_READ) {							\
+case -1:								\
+	EXIT_ON_FAILURE("read failure");				\
+case 0:									\
+	WRITE_LITERAL(INVALID_INPUT);					\
+	continue;							\
+case 2:									\
+	if (input[1] != '\n')						\
+		break;							\
+	/* fall through */						\
+case 1:									\
+	switch (input[0]) {						\
+	case 'b':							\
+		return true;						\
+	case 'q':							\
+		return false;						\
+	case 'v':							\
+		do_red_black_verify();					\
+		continue;						\
+	case 'p':							\
+		red_black_print(tree);					\
+		continue;						\
+	default: /* fall through */;					\
+	}								\
+default:								\
+	--SIZE_READ; /* trim '\n' */					\
+}
+
 #endif /* ifndef RED_BLACK_H_ */
