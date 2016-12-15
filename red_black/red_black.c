@@ -2,6 +2,44 @@
 
 static struct RedBlackNode *restrict tree;
 
+static inline void
+do_red_black_verify(void)
+{
+	char buffer[64];
+	char *restrict ptr;
+
+	ptr = &buffer[0];
+
+	*ptr = '\n'; ++ptr;
+	*ptr = 't'; ++ptr;
+	*ptr = 'r'; ++ptr;
+	*ptr = 'e'; ++ptr;
+	*ptr = 'e'; ++ptr;
+	*ptr = ' '; ++ptr;
+	*ptr = 'i'; ++ptr;
+	*ptr = 's'; ++ptr;
+	*ptr = ' '; ++ptr;
+
+	if (!red_black_verify(tree)) {
+		*ptr = 'N'; ++ptr;
+		*ptr = 'O'; ++ptr;
+		*ptr = 'T'; ++ptr;
+		*ptr = ' '; ++ptr;
+	}
+
+	*ptr = 'p'; ++ptr;
+	*ptr = 'r'; ++ptr;
+	*ptr = 'o'; ++ptr;
+	*ptr = 'p'; ++ptr;
+	*ptr = 'e'; ++ptr;
+	*ptr = 'r'; ++ptr;
+	*ptr = '\n'; ++ptr;
+	*ptr = '\n'; ++ptr;
+
+	WRITE_STDOUT(&buffer[0],
+		     ptr - &buffer[0]);
+}
+
 static inline bool
 insert_mode(void)
 {
@@ -34,6 +72,10 @@ insert_mode(void)
 
 			case 'q':
 				return false;
+
+			case 'v':
+				do_red_black_verify();
+				continue;
 
 			case 'p':
 				red_black_print(tree);
@@ -146,6 +188,10 @@ find_mode(void)
 			case 'q':
 				return false;
 
+			case 'v':
+				do_red_black_verify();
+				continue;
+
 			case 'p':
 				red_black_print(tree);
 				continue;
@@ -177,6 +223,10 @@ main(void)
 			 input);
 
 		switch (input[0]) {
+		case 'v':
+			do_red_black_verify();
+			break;
+
 		case 'p':
 			red_black_print(tree);
 			break;

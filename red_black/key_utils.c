@@ -1,5 +1,21 @@
 #include "key_utils.h"
 
+/* global variables
+ * ────────────────────────────────────────────────────────────────────────── */
+const struct Key KEY_MIN = {
+#if USE_HASH
+	.hash   = HASH_MIN,
+#endif /* if USE_HASH */
+	.string = STRING_MIN
+};
+
+const struct Key KEY_MAX = {
+#if USE_HASH
+	.hash   = HASH_MAX,
+#endif /* if USE_HASH */
+	.string = STRING_MAX
+};
+
 void
 exit_on_failure(const char *const restrict failure,
 		const size_t length_failure)

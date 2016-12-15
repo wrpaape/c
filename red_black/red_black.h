@@ -6,15 +6,16 @@
 #include "red_black_insert.h"
 #include "red_black_delete.h"
 #include "red_black_find.h"
+#include "red_black_verify.h"
 #include "red_black_print.h"
 
 /* prompts
  * ────────────────────────────────────────────────────────────────────────── */
 #define INVALID_INPUT	"invalid input\n"
-#define MAIN_PROMPT	"insert (i), find (f), delete (d), print (p), or  quit (q)\n> "
-#define INSERT_PROMPT	"input insert string, back (b), print (p), or quit (q)\n> "
-#define FIND_PROMPT	"input find string, back (b), print (p), or quit (q)\n> "
-#define DELETE_PROMPT	"input delete string, back (b), print (p), or quit (q)\n> "
+#define MAIN_PROMPT	"insert (i), find (f), delete (d), verify (v), print (p), or  quit (q)\n> "
+#define INSERT_PROMPT	"input insert string, back (b), verify (v), print (p), or quit (q)\n> "
+#define FIND_PROMPT	"input find string, back (b), verify (v), print (p), or quit (q)\n> "
+#define DELETE_PROMPT	"input delete string, back (b), verify (v), print (p), or quit (q)\n> "
 
 /* helpful macros
  * ────────────────────────────────────────────────────────────────────────── */

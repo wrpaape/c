@@ -1,8 +1,6 @@
 #ifndef KEY_UTILS_H_
 #define KEY_UTILS_H_
 
-#define USE_HASH 0
-
 /* external dependencies
  * ────────────────────────────────────────────────────────────────────────── */
 #include <unistd.h>	/* read, write */
@@ -29,6 +27,10 @@ if (write(STDOUT_FILENO,						\
 	EXIT_ON_FAILURE("write failure")
 
 
+/* toggle on/off string hashing
+ * ────────────────────────────────────────────────────────────────────────── */
+#define USE_HASH 1
+
 /* struct declarations
  * ────────────────────────────────────────────────────────────────────────── */
 struct Key {
@@ -37,6 +39,20 @@ struct Key {
 #endif /* if USE_HASH */
 	const unsigned char *string;
 };
+
+/* limits
+ * ────────────────────────────────────────────────────────────────────────── */
+#if USE_HASH
+#define HASH_MIN 0
+#define HASH_MAX INT64_MAX
+#endif /* if USE_HASH */
+#define STRING_MIN (const unsigned char *) "\x00"
+#define STRING_MAX (const unsigned char *) "\xFF"
+
+/* global variables
+ * ────────────────────────────────────────────────────────────────────────── */
+extern const struct Key KEY_MIN;
+extern const struct Key KEY_MAX;
 
 void
 exit_on_failure(const char *const restrict failure,
