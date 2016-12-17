@@ -45,11 +45,6 @@ rb_replace(struct RedBlackNode *const restrict node)
 	if (next != NULL)
 		next->color = BLACK;	/* min_sucessor is BLACK, next is RED */
 
-
-
-
-
-
 	return min_successor;
 
 }
