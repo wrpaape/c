@@ -1,54 +1,52 @@
 #include "red_black_delete.h"
 
-static inline void
-rb_replace_black_shallow(struct RedBlackNode *restrict *const restrict tree,
-			 struct RedBlackNode *const restrict lchild,
-			 struct RedBlackNode *const restrict rchild)
+static inline struct RedBlackNode *
+rb_do_replace_black_shallow(struct RedBlackNode *const restrict lchild,
+			    struct RedBlackNode *const restrict rchild)
 {
-	struct RedBlackNode *restrict lrchild;
-
 	if (rchild->color == RED) {
 		/* rchild RED, lchild RED -> black height of 1 */
-
 		rchild->color = BLACK;
 		rchild->left  = lchild; /* lchild must be RED */
 
-		*tree = rchild;
+		return rchild;
+	}
 
-	} else if (lchild->color == RED) {
+	/* black height of 2 */
+
+	struct RedBlackNode *const restrict lrchild = lchild->right;
+
+	if (lchild->color == RED) {
 		/* rchild BLACK, lchild RED -> black height of 2 */
-
 		lchild->color = BLACK;
-
-		*tree = lchild;
-
-		lrchild = lchild->right; /* lrchild must be BLACK */
-
 		lchild->right = rchild;
 
+		 /* lrchild must be non-NULL BLACK -> give to rchild */
 		rchild->left = lrchild;
 
 		lrchild->color = RED;
 
-	} else {
-		/* rchild BLACK, lchild BLACK -> black height of 2 */
-		lrchild = lchild->right;
-
-		if (lrchild == NULL) {
-			lchild->right = rchild;
-
-			*tree = lchild;
-
-			rchild->color = RED;
-
-		} else {
-			lrchild->color = BLACK;
-			lrchild->left  = lchild;
-			lrchild->right = rchild;
-
-			*tree = lrchild;
-		}
+		return lchild;
 	}
+
+	/* rchild BLACK, lchild BLACK -> black height of 2 */
+
+	if (lrchild == NULL) {
+		lchild->right = rchild;
+
+		rchild->color = RED;
+
+		return lchild;
+	}
+
+	/* lrchild is RED, make new root */
+	lchild->right = NULL;
+
+	lrchild->color = BLACK;
+	lrchild->left  = lchild;
+	lrchild->right = rchild;
+
+	return lrchild;
 }
 
 static inline bool
@@ -56,8 +54,8 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		 struct RedBlackNode *const restrict node)
 {
 	struct RedBlackNode *restrict replacement_parent;
+	struct RedBlackNode *restrict replacement_child;
 	struct RedBlackNode *restrict replacement;
-	struct RedBlackNode *restrict next;
 
 	struct RedBlackNode *const restrict lchild = node->left;
 	struct RedBlackNode *const restrict rchild = node->right;
@@ -70,7 +68,7 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		black_height_restored = (rchild != NULL);
 
 		if (black_height_restored)
-			rchild->color = BLACK;
+			rchild->color = BLACK; /* rchild is RED -> restore */
 
 		return black_height_restored;
 	}
@@ -81,79 +79,55 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		return true; /* lchild must be RED, -> BLACK -> restored */
 	}
 
-	/* find min successor and its parent
+	/* find min successor, its parent, and its right child
 	 * ────────────────────────────────────────────────────────────────── */
 	replacement = rchild->left;
 
 	if (replacement == NULL) {
-		rb_replace_black_shallow(tree,
-					 lchild,
-					 rchild);
+		*tree = rb_do_replace_black_shallow(lchild,
+						    rchild);
 		return true; /* black height of 1 or 2 restorable in all cases */
 	}
 
 	replacement_parent = rchild;
 
 	while (1) {
-		next = replacement->left;
-		if (next == NULL)
+		replacement_child = replacement->left;
+		if (replacement_child == NULL)
 			break;
 
 		replacement_parent = replacement;
-		replacement = next;
+		replacement        = replacement_child;
+	}
+
+	replacement_child = replacement->right;
+	replacement_parent->left = replacement_child; /* pop replacement */
+
+	if (replacement_child != NULL) {
+		/* replacement was BLACK, replacement_child is RED */
+		replacement_child->color = BLACK;
+
+		*tree = replacement;
+		replacement->left  = lchild;
+		replacement->right = rchild;
+		return true;
+	}
+
+	if (replacement->color == RED) {
+		/* restore w/ no loss in black height in right subtree */
+		replacement->color = BLACK;
+
+		*tree = replacement;
+		replacement->left  = lchild;
+		replacement->right = rchild;
+		return true;
 	}
 
 
+	/* TODO */
+
 }
 
-static inline void
-rb_delete_root(struct RedBlackNode *restrict *const restrict tree,
-	       struct RedBlackNode *const restrict root)
-{
-	struct RedBlackNode *restrict grandchild;
-	struct RedBlackNode *restrict lchild;
-	struct RedBlackNode *restrict rchild;
-
-	lchild = root->left;
-
-	if (lchild == NULL) {
-		rchild = root->right;
-
-		if (rchild != NULL)
-			rchild->color = BLACK;
-
-		*tree = rchild;
-
-	} else if (lchild->color == RED) {
-		grandchild = lchild->left;
-
-		if (grandchild == NULL) {
-			lchild->color = BLACK;
-			*tree = lchild;
-
-		} else {
-			rchild = root->right;
-
-			if (rchild->color == RED) {
-
-			} else {
-
-			}
-
-		}
-
-	} else {
-		rchild = root->right;
-		/* must be non-NULL */
-		if (rchild->color == RED) {
-
-
-
-		} else {
-
-		}
-	}
-}
 
 void
 red_black_delete(struct RedBlackNode *restrict *const restrict tree,
@@ -169,8 +143,9 @@ red_black_delete(struct RedBlackNode *restrict *const restrict tree,
 				      grandparent->key);
 
 		if (compare == 0) {
-			rb_delete_root(tree,
-				       grandparent);
+			(void) rb_replace_black(tree,
+						grandparent);
+
 		} else {
 		}
 	}
