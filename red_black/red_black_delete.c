@@ -1,51 +1,108 @@
 #include "red_black_delete.h"
 
-static inline struct RedBlackNode *
-rb_replace(struct RedBlackNode *const restrict node)
+static inline void
+rb_replace_black_shallow(struct RedBlackNode *restrict *const restrict tree,
+			 struct RedBlackNode *const restrict lchild,
+			 struct RedBlackNode *const restrict rchild)
 {
-	struct RedBlackNode *restrict *restrict prev_ptr;
-	struct RedBlackNode *restrict min_successor;
+	struct RedBlackNode *restrict lrchild;
+
+	if (rchild->color == RED) {
+		/* rchild RED, lchild RED -> black height of 1 */
+
+		rchild->color = BLACK;
+		rchild->left  = lchild; /* lchild must be RED */
+
+		*tree = rchild;
+
+	} else if (lchild->color == RED) {
+		/* rchild BLACK, lchild RED -> black height of 2 */
+
+		lchild->color = BLACK;
+
+		*tree = lchild;
+
+		lrchild = lchild->right; /* lrchild must be BLACK */
+
+		lchild->right = rchild;
+
+		rchild->left = lrchild;
+
+		lrchild->color = RED;
+
+	} else {
+		/* rchild BLACK, lchild BLACK -> black height of 2 */
+		lrchild = lchild->right;
+
+		if (lrchild == NULL) {
+			lchild->right = rchild;
+
+			*tree = lchild;
+
+			rchild->color = RED;
+
+		} else {
+			lrchild->color = BLACK;
+			lrchild->left  = lchild;
+			lrchild->right = rchild;
+
+			*tree = lrchild;
+		}
+	}
+}
+
+static inline bool
+rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
+		 struct RedBlackNode *const restrict node)
+{
+	struct RedBlackNode *restrict replacement_parent;
+	struct RedBlackNode *restrict replacement;
 	struct RedBlackNode *restrict next;
 
 	struct RedBlackNode *const restrict lchild = node->left;
 	struct RedBlackNode *const restrict rchild = node->right;
 
-	if (lchild == NULL)
-		return rchild;
+	bool black_height_restored;
 
-	if (rchild == NULL)
-		return lchild;
+	if (lchild == NULL) {
+		*tree = rchild;
 
-	min_successor = rchild->left;
+		black_height_restored = (rchild != NULL);
 
-	if (min_successor == NULL) {
-		rchild->left = lchild;
-		return rchild;
+		if (black_height_restored)
+			rchild->color = BLACK;
+
+		return black_height_restored;
 	}
 
-	prev_ptr = &rchild->left;
+	if (rchild == NULL) {
+		*tree = lchild;
+		lchild->color = BLACK;
+		return true; /* lchild must be RED, -> BLACK -> restored */
+	}
+
+	/* find min successor and its parent
+	 * ────────────────────────────────────────────────────────────────── */
+	replacement = rchild->left;
+
+	if (replacement == NULL) {
+		rb_replace_black_shallow(tree,
+					 lchild,
+					 rchild);
+		return true; /* black height of 1 or 2 restorable in all cases */
+	}
+
+	replacement_parent = rchild;
 
 	while (1) {
-		next = min_successor->left;
+		next = replacement->left;
 		if (next == NULL)
 			break;
 
-		prev_ptr = &min_successor->left;
-		min_successor = next;
+		replacement_parent = replacement;
+		replacement = next;
 	}
 
-	min_successor->left = lchild;
-
-	next = min_successor->right;
-
-	min_successor->right = rchild;
-
-	*prev_ptr = next;
-
-	if (next != NULL)
-		next->color = BLACK;	/* min_sucessor is BLACK, next is RED */
-
-	return min_successor;
 
 }
 
