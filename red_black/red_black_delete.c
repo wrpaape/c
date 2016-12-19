@@ -1,8 +1,13 @@
 #include "red_black_delete.h"
 
+static inline bool
+rb_replace_black_rb(struct RedBlackNode *const restrict lchild,
+		    struct RedBlackNode *const restrict rchild,
+		    struct RedBlackNode *const restrict replacement)
+
 static inline struct RedBlackNode *
-rb_do_replace_black_shallow(struct RedBlackNode *const restrict lchild,
-			    struct RedBlackNode *const restrict rchild)
+rb_replace_black_shallow(struct RedBlackNode *const restrict lchild,
+			 struct RedBlackNode *const restrict rchild)
 {
 	if (rchild->color == RED) {
 		/* rchild RED, lchild RED -> black height of 1 */
@@ -49,10 +54,39 @@ rb_do_replace_black_shallow(struct RedBlackNode *const restrict lchild,
 	return lrchild;
 }
 
+/* return true if simple change can be made to restore original black height in
+ * replacement (right) subtree of deleted node (and do change) */
+static inline bool
+rb_replace_black_simple(struct RedBlackNode *const restrict rchild,
+			struct RedBlackNode *const restrict replacement,
+			struct RedBlackNode *const restrict replacement_child)
+{
+	if (replacement_child != NULL) /* replacement is BLACK, child is RED  */
+		replacement_child->color = BLACK;
+	else if (replacement->color == RED)
+		replacement->color	 = BLACK;
+	else if (rchild->color == RED)
+		rchild->color		 = BLACK;
+	else
+		return false;
+
+	return true;
+}
+
+/* attempt to restore black height in the replacement tree */
+static inline bool
+rb_replace_black_rtree(struct RedBlackNode *restrict *const restrict tree,
+		       struct RedBlackNode *const restrict parent,
+		       struct RedBlackNode *const restrict replacement)
+{
+}
+
+
 static inline bool
 rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		 struct RedBlackNode *const restrict node)
 {
+	struct RedBlackNode *restrict *restrict replacement_tree;
 	struct RedBlackNode *restrict replacement_parent;
 	struct RedBlackNode *restrict replacement_child;
 	struct RedBlackNode *restrict replacement;
@@ -60,12 +94,10 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 	struct RedBlackNode *const restrict lchild = node->left;
 	struct RedBlackNode *const restrict rchild = node->right;
 
-	bool black_height_restored;
-
 	if (lchild == NULL) {
 		*tree = rchild;
 
-		black_height_restored = (rchild != NULL);
+		const bool black_height_restored = (rchild != NULL);
 
 		if (black_height_restored)
 			rchild->color = BLACK; /* rchild is RED -> restore */
@@ -79,16 +111,18 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		return true; /* lchild must be RED, -> BLACK -> restored */
 	}
 
-	/* find min successor, its parent, and its right child
+	/* find min successor, its parent (and maybe pointer to parent), and
+	 * its right child
 	 * ────────────────────────────────────────────────────────────────── */
 	replacement = rchild->left;
 
 	if (replacement == NULL) {
-		*tree = rb_do_replace_black_shallow(lchild,
-						    rchild);
-		return true; /* black height of 1 or 2 restorable in all cases */
+		*tree = rb_replace_black_shallow(lchild,
+						 rchild);
+		return true; /* black height of 1 or 2 always restorable */
 	}
 
+	replacement_tree   = &rchild;
 	replacement_parent = rchild;
 
 	while (1) {
@@ -96,33 +130,32 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		if (replacement_child == NULL)
 			break;
 
+		replacement_tree   = &replacement_parent->left;
 		replacement_parent = replacement;
 		replacement        = replacement_child;
 	}
 
-	replacement_child = replacement->right;
+	replacement_child	 = replacement->right;
 	replacement_parent->left = replacement_child; /* pop replacement */
 
-	if (replacement_child != NULL) {
-		/* replacement was BLACK, replacement_child is RED */
-		replacement_child->color = BLACK;
-
-		*tree = replacement;
+	if (   rb_replace_black_simple(rchild,
+				       replacement,
+				       replacement_child)
+		/* rchild, replacement, or replacement_child was colored from
+		 * RED -> BLACK to restore black height in replacement
+		 * subtree
+		 * replacement guaranteed BLACK */
+	    || rb_replace_black_rtree(replacement_tree,
+				      replacement_parent,
+				      replacement)) {
 		replacement->left  = lchild;
 		replacement->right = rchild;
+		*tree = replacement;
 		return true;
 	}
 
-	if (replacement->color == RED) {
-		/* restore w/ no loss in black height in right subtree */
-		replacement->color = BLACK;
-
-		*tree = replacement;
-		replacement->left  = lchild;
-		replacement->right = rchild;
-		return true;
-	}
-
+	/* rchild and replacement are BLACK, right subtree is valid but
+	 * deficient 1 black height */
 
 	/* TODO */
 
