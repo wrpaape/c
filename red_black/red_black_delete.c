@@ -73,12 +73,74 @@ rb_replace_black_simple(struct RedBlackNode *const restrict rchild,
 	return true;
 }
 
-/* attempt to restore black height in the replacement tree */
+/* attempt to restore black height in the replacement (right) tree, if can't,
+ * restore balance and return false */
 static inline bool
-rb_replace_black_rtree(struct RedBlackNode *restrict *const restrict tree,
-		       struct RedBlackNode *const restrict parent,
-		       struct RedBlackNode *const restrict replacement)
+rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
+		       struct RedBlackNode *const restrict *restrict stack_ptr,
+		       struct RedBlackNode *restrict parent)
 {
+	struct RedBlackNode *restrict lchild;
+	struct RedBlackNode *restrict rchild;
+	struct RedBlackNode *restrict grandchild;
+	struct RedBlackNode *restrict great_grandchild;
+	struct RedBlackNode *restrict grandparent;
+
+	rchild     = parent->right;
+	grandchild = rchild->left;
+
+	if (parent->color == RED) {
+		parent->color = BLACK;
+		/* rchild must be BLACK */
+
+		if (grandchild == NULL) {
+			/* balance restored, not black height */
+			rchild->color = RED;
+
+		} else {
+			grandparent = *stack_ptr;
+
+			if (grandparent != NULL) /* parent != root */
+				root = &grandparent->left;
+
+			/* balance AND black height restored */
+			*root = grandchild;
+
+			grandchild->color = BLACK;
+			grandchild->left  = parent;
+			grandchild->right = rchild;;
+
+			parent->right == NULL;
+			return true;
+		}
+
+	} else if (rchild->color == RED) {
+		/* grandchild is BLACK, not NULL */
+		great_grandchild = grandchild->left;
+
+		if (great_grandchild == NULL) {
+			grandchild->left = parent; /* put parent on min */
+
+			parent->color = RED;
+			parent->right = NULL;
+
+			grandparent = *stack_ptr;
+
+			if (grandparent != NULL) /* parent != root */
+				root = &grandparent->left;
+
+			/* balance AND black height restored */
+			*root = rchild;
+
+			rchild->color = BLACK;
+			return true;
+		}
+
+
+
+	} else {
+	}
+
 }
 
 
@@ -86,13 +148,18 @@ static inline bool
 rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		 struct RedBlackNode *const restrict node)
 {
-	struct RedBlackNode *restrict *restrict replacement_tree;
 	struct RedBlackNode *restrict replacement_parent;
 	struct RedBlackNode *restrict replacement_child;
 	struct RedBlackNode *restrict replacement;
+	struct RedBlackNode *restrict lchild;
+	struct RedBlackNode *restrict rchild;
 
-	struct RedBlackNode *const restrict lchild = node->left;
-	struct RedBlackNode *const restrict rchild = node->right;
+	/* can handle trees of upto at least 1,000,000,000 nodes */
+	struct RedBlackNode *const restrict replacement_stack[81];
+	struct RedBlackNode *const restrict *restrict replacement_stack_ptr;
+
+	lchild = node->left;
+	rchild = node->right;
 
 	if (lchild == NULL) {
 		*tree = rchild;
@@ -111,8 +178,8 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		return true; /* lchild must be RED, -> BLACK -> restored */
 	}
 
-	/* find min successor, its parent (and maybe pointer to parent), and
-	 * its right child
+	/* find min successor, its parent, its right child, and its ancestor
+	 * stack of rchild->left->left-> ... ->grandparent
 	 * ────────────────────────────────────────────────────────────────── */
 	replacement = rchild->left;
 
@@ -122,7 +189,9 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		return true; /* black height of 1 or 2 always restorable */
 	}
 
-	replacement_tree   = &rchild;
+	replacement_stack_ptr  = &replacement_stack[0];
+	*replacement_stack_ptr = NULL;
+
 	replacement_parent = rchild;
 
 	while (1) {
@@ -130,7 +199,9 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		if (replacement_child == NULL)
 			break;
 
-		replacement_tree   = &replacement_parent->left;
+		++replacement_stack_ptr;
+		*replacement_stack_ptr = replacement_parent;
+
 		replacement_parent = replacement;
 		replacement        = replacement_child;
 	}
@@ -141,16 +212,22 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 	if (   rb_replace_black_simple(rchild,
 				       replacement,
 				       replacement_child)
+	    || rb_replace_black_rtree(&rchild,
+				      replacement_stack_ptr,
+				      replacement_parent)) {
 		/* rchild, replacement, or replacement_child was colored from
 		 * RED -> BLACK to restore black height in replacement
 		 * subtree
+		 *
+		 * OR
+		 *
+		 * black height restored through recoloring, rotation of
+		 * ancestors of replacement
+		 *
 		 * replacement guaranteed BLACK */
-	    || rb_replace_black_rtree(replacement_tree,
-				      replacement_parent,
-				      replacement)) {
+		*tree = replacement;
 		replacement->left  = lchild;
 		replacement->right = rchild;
-		*tree = replacement;
 		return true;
 	}
 
