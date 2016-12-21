@@ -221,7 +221,7 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		 *
 		 * OR
 		 *
-		 * black height restored through recoloring, rotation of
+		 * black height restored through recoloring and/or rotation of
 		 * ancestors of replacement
 		 *
 		 * replacement guaranteed BLACK */
