@@ -94,27 +94,52 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 		/* rchild must be BLACK */
 
 		if (grandchild == NULL) {
-			/* balance restored, not black height */
 			rchild->color = RED;
+			grandchild = rchild->right;
 
+			if (grandchild != NULL) {
+				/* grandchild must be RED leaf */
+				grandparent = *stack_ptr;
+				if (grandparent != NULL) /* parent != root */
+					root = &grandparent->left;
+
+				/* balance AND black height restored */
+				*root = rchild;
+
+				rchild->left  = parent;
+				rchild->right = grandchild;;
+
+				parent->right = NULL;
+
+				grandchild->color = BLACK;
+				return true;
+			}
+			/* !! balance restored, not black height !! */
 		} else {
 			grandparent = *stack_ptr;
-
 			if (grandparent != NULL) /* parent != root */
 				root = &grandparent->left;
 
 			/* balance AND black height restored */
 			*root = grandchild;
 
-			grandchild->color = BLACK;
 			grandchild->left  = parent;
 			grandchild->right = rchild;;
 
-			parent->right == NULL;
+			parent->right = NULL;
+
+			rchild->left = NULL;
 			return true;
 		}
 
 	} else if (rchild->color == RED) {
+		 /* can balance AND restore black height */
+		parent->right = NULL;
+
+		grandparent = *stack_ptr;
+		if (grandparent != NULL) /* parent != root */
+			root = &grandparent->left;
+
 		/* grandchild is BLACK, not NULL */
 		great_grandchild = grandchild->left;
 
@@ -122,23 +147,23 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 			grandchild->left = parent; /* put parent on min */
 
 			parent->color = RED;
-			parent->right = NULL;
 
-			grandparent = *stack_ptr;
-
-			if (grandparent != NULL) /* parent != root */
-				root = &grandparent->left;
-
-			/* balance AND black height restored */
 			*root = rchild;
 
 			rchild->color = BLACK;
-			return true;
+
+		} else {
+			grandchild->left = NULL; /* bring ggchild to root */
+
+			*root = great_grandchild;
+
+			great_grandchild->color = BLACK;
+			great_grandchild->left  = parent;
+			great_grandchild->right = rchild;
 		}
+		return true;
 
-
-
-	} else {
+	} else if () {
 	}
 
 }
