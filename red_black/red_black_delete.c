@@ -73,6 +73,32 @@ rb_replace_black_simple(struct RedBlackNode *const restrict rchild,
 	return true;
 }
 
+/* nodes are named according to their relation to RED uncle */
+static inline void
+rb_replace_black_restore(struct RedBlackNode *restrict *const restrict root,
+			 struct RedBlackNode *const restrict parent,
+			 struct RedBlackNode *const restrict lchild)
+{
+	struct RedBlackNode *restrict llgrandchild;
+	struct RedBlackNode *restrict lrgrandchild;
+
+	llgrandchild = lchild->left;
+	lrgrandchild = lchild->right;
+
+	if (lrgrandchild->color == RED) {
+		lrgrandchild->color = BLACK;
+
+
+
+		/* lchild is root, no need to update */
+
+	} else if (llgrandchild->color == RED) {
+
+	} else {
+
+	}
+}
+
 /* attempt to restore black height in the replacement (right) tree, if can't,
  * restore balance and return false */
 static inline bool
@@ -200,17 +226,29 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 	/* grandparent->parent->rchild balanced, but are deficient 1 black
 	 * height -> unwind stack to look for opportunity to correct
 	 * ────────────────────────────────────────────────────────────────── */
-	if (grandparent == NULL)
-		return false; /* unwound all the way to root w/o correction */
-
-	while (1) {
+	while (grandparent != NULL) {
 		--stack_ptr;
 		great_grandparent = *stack_ptr;
 
 
+		uncle = grandparent->right;
 
+		if (uncle->color == RED) {
+			uncle->color = BLACK;
+
+			if (great_grandparent != NULL) /* grandparent != root */
+				root = &great_grandparent->left;
+
+			*root = uncle;
+
+			rb_replace_black_restore(&uncle->left,
+						 grandparent,
+						 uncle->left);
+			return true; /* always completely restorable */
+		}
 	}
 
+	return false; /* unwound all the way to root w/o correction */
 }
 
 
