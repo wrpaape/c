@@ -73,88 +73,92 @@ rb_replace_black_simple(struct RedBlackNode *const restrict rchild,
 	return true;
 }
 
-static inline void
-rb_replace_black_unwind_bprn(struct RedBlackNode *restrict *const restrict root,
-			     struct RedBlackNode *const restrict parent,
-			     struct RedBlackNode *const restrict lchild)
-{
-	struct RedBlackNode *restrict llgrandchild;
-	struct RedBlackNode *restrict lrgrandchild;
+/* static inline void */
+/* rb_replace_black_unwind_bprn(struct RedBlackNode *restrict *const restrict root, */
+/* 			     struct RedBlackNode *const restrict parent, */
+/* 			     struct RedBlackNode *const restrict lchild) */
+/* { */
 
-	llgrandchild = lchild->left;
-	lrgrandchild = lchild->right;
+/* 	llgrandchild = lchild->left; */
+/* 	lrgrandchild = lchild->right; */
 
-	if (lrgrandchild->color == RED) {
-		/* lchild is root, no need to update */
-		lrgrandchild->color = BLACK;
+/* 	if (lrgrandchild->color == RED) { */
+/* 		/1* lchild is root, no need to update *1/ */
+/* 		lrgrandchild->color = BLACK; */
 
-		lchild->color = RED; /* lchild must have been BLACK */
-		lchild->left  = parent;
+/* 		lchild->color = RED; /1* lchild must have been BLACK *1/ */
+/* 		lchild->left  = parent; */
 
-		parent->right = llgrandchild;
-	} else if (llgrandchild->color == RED) {
-		*root = llgrandchild; /* make llgranchild new root */
+/* 		parent->right = llgrandchild; */
+/* 	} else if (llgrandchild->color == RED) { */
+/* 		*root = llgrandchild; /1* make llgranchild new root *1/ */
 
-		parent->right      = llgrandchild->left;
-		llgrandchild->left = parent;
+/* 		parent->right      = llgrandchild->left; */
+/* 		llgrandchild->left = parent; */
 
-		lchild->left        = llgrandchild->right;
-		llgrandchild->right = lchild;
+/* 		lchild->left        = llgrandchild->right; */
+/* 		llgrandchild->right = lchild; */
 
-	} else {
-		/* lchild is root, no need to update */
-		lchild->left = parent;
+/* 	} else { */
+/* 		/1* lchild is root, no need to update *1/ */
+/* 		lchild->left = parent; */
 
-		parent->color = RED; /* parent and parent->left were BLACK */
-		parent->right = llgrandchild;
-	}
-}
+/* 		parent->color = RED; /1* parent and parent->left were BLACK *1/ */
+/* 		parent->right = llgrandchild; */
+/* 	} */
+/* } */
 
 
-/* parent is RED, node is BLACK
- * nodes are named according to their relation to 'node' */
-static inline struct RedBlackNode *
-rb_replace_black_unwind_rpbn(struct RedBlackNode *const restrict parent,
-			     struct RedBlackNode *const restrict node)
-{
-	struct RedBlackNode *const restrict lchild = node->left;
+/* /1* parent is RED, node is BLACK */
+/*  * nodes are named according to their relation to 'node' *1/ */
+/* static inline struct RedBlackNode * */
+/* rb_replace_black_unwind_rpbn(struct RedBlackNode *const restrict parent, */
+/* 			     struct RedBlackNode *const restrict node) */
+/* { */
+/* 	struct RedBlackNode *const restrict lchild = node->left; */
 
-	if (lchild->color == RED) {
-		parent->color = BLACK;
-		parent->right = lchild->left;
-		lchild->left  = parent;
+/* 	if (lchild->color == RED) { */
+/* 		parent->color = BLACK; */
+/* 		parent->right = lchild->left; */
+/* 		lchild->left  = parent; */
 
-		node->left    = lchild->right;
-		lchild->right = node;
+/* 		node->left    = lchild->right; */
+/* 		lchild->right = node; */
 
-		return lchild; /* lchild is the new root */
-	}
+/* 		return lchild; /1* lchild is the new root *1/ */
+/* 	} */
 
-	parent->right = lchild;
+/* 	parent->right = lchild; */
 
-	node->left = parent;
+/* 	node->left = parent; */
 
-	return node; /* node is the new root */
-}
+/* 	return node; /1* node is the new root *1/ */
+/* } */
 
 
 /* unwind min successor stack */
 static inline bool
 rb_replace_black_unwind(struct RedBlackNode *restrict *restrict root,
 			struct RedBlackNode *const restrict *restrict stack_ptr,
-			struct RedBlackNode *const restrict parent)
+			struct RedBlackNode *restrict parent)
 {
 	struct RedBlackNode *restrict grandparent;
 	struct RedBlackNode *restrict node;
+	struct RedBlackNode *restrict lchild;
+	struct RedBlackNode *restrict rchild;
+	struct RedBlackNode *restrict llgrandchild;
+	struct RedBlackNode *restrict lrgrandchild;
 
 	while (parent != NULL) {
 		--stack_ptr;
 		grandparent = *stack_ptr;
 
-		node = parent->right;
+		node   = parent->right;
+		lchild = node->left;
 
 		if (node->color == RED) {
-			/* parent is BLACK, node is RED */
+			/* parent is BLACK, node is RED
+			 * ────────────────────────────────────────────────── */
 			node->color = BLACK;
 
 			if (grandparent != NULL) /* parent != root */
@@ -166,21 +170,111 @@ rb_replace_black_unwind(struct RedBlackNode *restrict *restrict root,
 			rb_replace_black_unwind_bprn(&node->left,
 						     parent,
 						     node->left);
+			llgrandchild = lchild->left;
+			lrgrandchild = lchild->right;
+
+			if (lrgrandchild->color == RED) {
+				/* no need to update lchild */
+				lrgrandchild->color = BLACK;
+
+				/* lchild must have been BLACK */
+				lchild->color = RED;
+				lchild->left  = parent;
+
+				parent->right = llgrandchild;
+			} else if (llgrandchild->color == RED) {
+				/* make llgrandchild new lchild */
+				node->left = llgrandchild;
+
+				parent->right      = llgrandchild->left;
+				llgrandchild->left = parent;
+
+				lchild->left        = llgrandchild->right;
+				llgrandchild->right = lchild;
+
+			} else {
+				/* lchild is root, no need to update */
+				lchild->left = parent;
+
+				/* parent and parent->left were BLACK */
+				parent->color = RED;
+				parent->right = llgrandchild;
+			}
+
 			return true; /* always completely restorable */
 
 		} else if (parent->color == RED) {
+			/* parent is RED, node is BLACK
+			 * ────────────────────────────────────────────────── */
 			if (grandparent != NULL) /* parent != root */
 				root = &grandparent->left;
 
 			/* root will ALWAYS be replaced */
-			*root = rb_replace_black_unwind_rpbn(parent,
-							     node);
+			if (lchild->color == RED) {
+				*root = lchild; /* lchild is new root */
+
+				parent->color = BLACK;
+				parent->right = lchild->left;
+				lchild->left  = parent;
+
+				node->left    = lchild->right;
+				lchild->right = node;
+
+			} else {
+				*root = node; /* node is new root */
+
+				node->left = parent;
+
+				parent->right = lchild;
+			}
+
 			return true; /* always completely restorable */
+
+		/* parent is BLACK, node is BLACK
+		 * ────────────────────────────────────────────────────────── */
+		} else if (lchild->color == RED) {
+			lchild->color = BLACK;
+
+			if (grandparent != NULL) /* parent != root */
+				root = &grandparent->left;
+
+			*root = lchild; /* lchild is new root */
+
+			parent->right = lchild->left;
+			lchild->left  = parent;
+
+			node->left    = lchild->right;
+			lchild->right = node;
+
+			return true; /* always completely restorable */
+
+		} else {
+			rchild = node->right;
+
+			if (rchild->color == RED) {
+				rchild->color = BLACK;
+
+				if (grandparent != NULL) /* parent != root */
+					root = &grandparent->left;
+
+				*root = node; /* node is new root */
+
+				node->left = parent;
+
+				parent->right = lchild;
+
+				return true; /* always completely restorable */
+			}
 		}
+		/* parent, sibling (parent->left), node (parent->right), lchild
+		 * (node->left), and rchild (node->right) are ALL BLACK
+		 *
+		 * recolor node to restore balance in parent tree, but still
+		 * deficient 1 black height -> recurse */
+		node->color = RED;
 
+		parent = grandparent;
 	}
-
-
 	/* unwound all the way to root
 	 * balance is restored, but black height is still deficient */
 	return false;
