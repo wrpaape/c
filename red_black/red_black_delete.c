@@ -273,6 +273,10 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 
 	if (parent->color == RED) {
 		parent->color = BLACK;
+
+		if (grandparent != NULL) /* parent != root */
+			root = &grandparent->left;
+
 		/* rnode must be BLACK */
 		if (rlchild == NULL) {
 			rnode->color = RED;
@@ -282,22 +286,13 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 				/* rrchild must be RED leaf */
 				rrchild->color = BLACK;
 
-				if (grandparent != NULL) /* parent != root */
-					root = &grandparent->left;
-
 				*root = rnode;
 
 				rnode->left = parent;
 
 				parent->right = NULL;
-				return true; /* completely restored */
-			}
-			/* !! balance restored, NOT black height !!
-			 * ────────────────────────────────────────────────── */
+			} /* else no need to change root */
 		} else {
-			if (grandparent != NULL) /* parent != root */
-				root = &grandparent->left;
-
 			*root = rlchild;
 
 			rlchild->left  = parent;
@@ -306,7 +301,6 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 			parent->right = NULL;
 
 			rnode->left = NULL;
-			return true; /* completely restored */
 		}
 
 	} else if (rnode->color == RED) {
@@ -338,29 +332,32 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 			rllgrandchild->right = rnode;
 		}
 
-		return true; /* completely restored */
-
 	} else if (rlchild == NULL) {
 		rrchild = rnode->right;
 
-		if (rrchild != NULL) {
-			/* rrchild must be RED leaf */
-			rrchild->color = BLACK;
-
-			if (grandparent != NULL) /* parent != root */
-				root = &grandparent->left;
-
-			*root = rnode;
-
-			rnode->left = parent;
-
-			parent->right = NULL;
-			return true; /* completely restored */
+		if (rrchild == NULL) {
+			rnode->color = RED;
+			/* grandparent->parent->rnode balanced, but are
+			 * deficient 1 black height -> unwind stack to look for
+			 * opportunity to correct
+			 * ────────────────────────────────────────────────── */
+			return rb_replace_black_unwind(root,
+						       stack_ptr,
+						       grandparent);
 		}
 
-		rnode->color = RED;
-		/* !! balance restored, NOT black height !!
-		 * ────────────────────────────────────────────────────────── */
+		/* rrchild must be RED leaf */
+		rrchild->color = BLACK;
+
+		if (grandparent != NULL) /* parent != root */
+			root = &grandparent->left;
+
+		*root = rnode;
+
+		rnode->left = parent;
+
+		parent->right = NULL;
+
 	} else {
 		/* granchild is a RED leaf, make new root */
 		if (grandparent != NULL) /* parent != root */
@@ -375,15 +372,9 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 		parent->right = NULL;
 
 		rnode->left = NULL;
-		return true; /* completely restored */
 	}
 
-	/* grandparent->parent->rnode balanced, but are deficient 1 black
-	 * height -> unwind stack to look for opportunity to correct
-	 * ────────────────────────────────────────────────────────────────── */
-	return rb_replace_black_unwind(root,
-				       stack_ptr,
-				       grandparent);
+	return true; /* completely restored */
 }
 
 
@@ -472,6 +463,8 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 
 	/* rchild and replacement are BLACK, right subtree is valid (balanced)
 	 * but deficient 1 black height
+	 *
+	 * lchild has black height of AT LEAST 2 (inclusive)
 	 * ────────────────────────────────────────────────────────────────── */
 
 	/* TODO */
