@@ -44,10 +44,13 @@ rb_replace_black_shallow(struct RedBlackNode *restrict *const restrict tree,
 
 		llchild = lnode->left;
 
+		/* only non-restorable case: lnode and rnode are BLACK leafs
+		 * ────────────────────────────────────────────────────────── */
 		restored = (llchild != NULL);
-
 		if (restored)
 			llchild->color = BLACK;
+		else
+			rnode->color = RED; /* restore balance */
 
 		*tree = lnode;
 		return restored;
@@ -91,24 +94,6 @@ rb_replace_black_shallow(struct RedBlackNode *restrict *const restrict tree,
 	return true;
 }
 
-/* return true if simple change can be made to restore original black height in
- * replacement (right) subtree of deleted node (and do change) */
-static inline bool
-rb_replace_black_simple(struct RedBlackNode *const restrict rchild,
-			struct RedBlackNode *const restrict replacement,
-			struct RedBlackNode *const restrict replacement_child)
-{
-	if (replacement_child != NULL) /* replacement is BLACK, child is RED  */
-		replacement_child->color = BLACK;
-	else if (replacement->color == RED)
-		replacement->color	 = BLACK;
-	else if (rchild->color == RED)
-		rchild->color		 = BLACK;
-	else
-		return false;
-
-	return true;
-}
 
 /* unwind min successor stack to attempt to restore black height and balance
  * if black height cannot be restored, retore balance and return false */
@@ -253,129 +238,147 @@ rb_replace_black_unwind(struct RedBlackNode *restrict *restrict root,
 	return false;
 }
 
-/* attempt to restore black height in the replacement (right) tree, if can't,
- * restore balance and return false */
+
+/* attempt to restore black height in the replacement node (lnode) tree (right
+ * subtree of deleted BLACK node)
+ *
+ * if can't, restore balance and return false */
 static inline bool
 rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 		       struct RedBlackNode *const restrict *restrict stack_ptr,
-		       struct RedBlackNode *restrict parent)
+		       struct RedBlackNode *restrict parent,
+		       struct RedBlackNode *const restrict lnode,
+		       struct RedBlackNode *const restrict lrchild)
 {
-	struct RedBlackNode *restrict rchild;
-	struct RedBlackNode *restrict grandchild;
-	struct RedBlackNode *restrict great_grandchild;
 	struct RedBlackNode *restrict grandparent;
+	struct RedBlackNode *restrict rnode;
+	struct RedBlackNode *restrict rlchild;
+	struct RedBlackNode *restrict rrchild;
+	struct RedBlackNode *restrict rllgrandchild;
+
+	if (lrchild != NULL) {
+		/* replacement node is BLACK, child is RED leaf -> resture  */
+		lrchild->color = BLACK;
+		return true;
+
+	} else if (lnode->color == RED) {
+		/* no harm no foul, ensure replacement BLACK before return */
+		lnode->color = BLACK;
+		return true;
+	}
 
 	grandparent = *stack_ptr;
-	rchild      = parent->right;
-	grandchild  = rchild->left;
+	rnode       = parent->right;
+	rlchild     = rnode->left;
 
 	if (parent->color == RED) {
 		parent->color = BLACK;
-		/* rchild must be BLACK */
-		if (grandchild == NULL) {
-			rchild->color = RED;
-			grandchild = rchild->right;
+		/* rnode must be BLACK */
+		if (rlchild == NULL) {
+			rnode->color = RED;
+			rrchild = rnode->right;
 
-			if (grandchild != NULL) {
-				/* grandchild must be RED leaf */
+			if (rrchild != NULL) {
+				/* rrchild must be RED leaf */
+				rrchild->color = BLACK;
+
 				if (grandparent != NULL) /* parent != root */
 					root = &grandparent->left;
 
-				*root = rchild;
+				*root = rnode;
 
-				rchild->left  = parent;
-				rchild->right = grandchild;
+				rnode->left = parent;
 
 				parent->right = NULL;
-
-				grandchild->color = BLACK;
-				return true; /* balance AND black height restored */
+				return true; /* completely restored */
 			}
-			/* !! balance restored, NOT black height !! */
+			/* !! balance restored, NOT black height !!
+			 * ────────────────────────────────────────────────── */
 		} else {
 			if (grandparent != NULL) /* parent != root */
 				root = &grandparent->left;
 
-			*root = grandchild;
+			*root = rlchild;
 
-			grandchild->left  = parent;
-			grandchild->right = rchild;
+			rlchild->left  = parent;
+			rlchild->right = rnode;
 
 			parent->right = NULL;
 
-			rchild->left = NULL;
-			return true; /* balance AND black height restored */
+			rnode->left = NULL;
+			return true; /* completely restored */
 		}
 
-	} else if (rchild->color == RED) {
+	} else if (rnode->color == RED) {
 		 /* can balance AND restore black height */
 		parent->right = NULL;
 
 		if (grandparent != NULL) /* parent != root */
 			root = &grandparent->left;
 
-		/* grandchild is BLACK, not NULL */
-		great_grandchild = grandchild->left;
+		/* rlchild is BLACK, not NULL */
+		rllgrandchild = rlchild->left;
 
-		if (great_grandchild == NULL) {
-			grandchild->left = parent; /* put parent on min */
+		if (rllgrandchild == NULL) {
+			rlchild->left = parent; /* put parent on min */
 
 			parent->color = RED;
 
-			*root = rchild;
+			*root = rnode;
 
-			rchild->color = BLACK;
+			rnode->color = BLACK;
 
 		} else {
-			grandchild->left = NULL; /* bring ggchild to root */
+			rlchild->left = NULL; /* bring ggchild to root */
 
-			*root = great_grandchild;
+			*root = rllgrandchild;
 
-			great_grandchild->color = BLACK;
-			great_grandchild->left  = parent;
-			great_grandchild->right = rchild;
+			rllgrandchild->color = BLACK;
+			rllgrandchild->left  = parent;
+			rllgrandchild->right = rnode;
 		}
-		return true; /* balance AND black height restored */
 
-	} else if (grandchild == NULL) {
-		grandchild = rchild->right;
+		return true; /* completely restored */
 
-		if (grandchild != NULL) {
-			/* grandchild must be RED leaf */
+	} else if (rlchild == NULL) {
+		rrchild = rnode->right;
+
+		if (rrchild != NULL) {
+			/* rrchild must be RED leaf */
+			rrchild->color = BLACK;
+
 			if (grandparent != NULL) /* parent != root */
 				root = &grandparent->left;
 
-			*root = rchild;
+			*root = rnode;
 
-			rchild->left  = parent;
-			rchild->right = grandchild;
+			rnode->left = parent;
 
 			parent->right = NULL;
-
-			grandchild->color = BLACK;
-			return true; /* balance AND black height restored */
+			return true; /* completely restored */
 		}
 
-		rchild->color = RED;
-		/* !! balance restored, NOT black height !! */
+		rnode->color = RED;
+		/* !! balance restored, NOT black height !!
+		 * ────────────────────────────────────────────────────────── */
 	} else {
 		/* granchild is a RED leaf, make new root */
 		if (grandparent != NULL) /* parent != root */
 			root = &grandparent->left;
 
-		*root = grandchild;
+		*root = rlchild;
 
-		grandchild->color = BLACK;
-		grandchild->left  = parent;
-		grandchild->right = rchild;
+		rlchild->color = BLACK;
+		rlchild->left  = parent;
+		rlchild->right = rnode;
 
 		parent->right = NULL;
 
-		rchild->left = NULL;
-		return true; /* balance AND black height restored */
+		rnode->left = NULL;
+		return true; /* completely restored */
 	}
 
-	/* grandparent->parent->rchild balanced, but are deficient 1 black
+	/* grandparent->parent->rnode balanced, but are deficient 1 black
 	 * height -> unwind stack to look for opportunity to correct
 	 * ────────────────────────────────────────────────────────────────── */
 	return rb_replace_black_unwind(root,
@@ -406,7 +409,6 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		*tree = rchild;
 
 		restored = (rchild != NULL);
-
 		if (restored)
 			rchild->color = BLACK; /* rchild is RED -> restore */
 
@@ -448,31 +450,27 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 	replacement_child	 = replacement->right;
 	replacement_parent->left = replacement_child; /* pop replacement */
 
-	if (   rb_replace_black_simple(rchild,
-				       replacement,
-				       replacement_child)
-	    || rb_replace_black_rtree(&rchild,
-				      replacement_stack_ptr,
-				      replacement_parent)) {
-		/* rchild, replacement, or replacement_child was colored from
-		 * RED -> BLACK to restore black height in replacement
-		 * subtree
-		 *
-		 * OR
-		 *
-		 * black height restored through recoloring and/or rotation of
-		 * ancestors of replacement
+	restored = rb_replace_black_rtree(&rchild,
+					  replacement_stack_ptr,
+					  replacement_parent,
+					  replacement,
+					  replacement_child);
+
+	replacement->right = rchild; /* set right subtree of replacement */
+
+	if (restored) {
+		/* black height restored through recoloring and/or rotation of
+		 * ancestors or right child of replacement
 		 *
 		 * replacement guaranteed BLACK */
 		*tree = replacement;
 		replacement->left  = lchild;
-		replacement->right = rchild;
 		return true;
 	}
-	/* rchild and replacement are BLACK, right subtree is valid (balanced)
-	 * but deficient 1 black height */
 
-	/* TODO */
+	/* rchild and replacement are BLACK, right subtree is valid (balanced)
+	 * but deficient 1 black height
+	 * ────────────────────────────────────────────────────────────────── */
 
 }
 
