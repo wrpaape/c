@@ -82,8 +82,8 @@ rb_replace_black_shallow(struct RedBlackNode *restrict *const restrict tree,
 		} else {
 			lrchild->right = NULL;
 
-			lrrgrandchild->left = lrchild;
-			lrgrandchild->right = rchild;
+			lrrgrandchild->left  = lrchild;
+			lrrgrandchild->right = rchild;
 
 			lchild->right = lrrgrandchild;
 		}
@@ -103,111 +103,112 @@ rb_replace_black_unwind(struct RedBlackNode *restrict *restrict root,
 			struct RedBlackNode *restrict parent)
 {
 	struct RedBlackNode *restrict grandparent;
-	struct RedBlackNode *restrict node;
-	struct RedBlackNode *restrict lchild;
+	struct RedBlackNode *restrict rnode;
+	struct RedBlackNode *restrict rlchild;
 	struct RedBlackNode *restrict rchild;
-	struct RedBlackNode *restrict llgrandchild;
-	struct RedBlackNode *restrict lrgrandchild;
+	struct RedBlackNode *restrict rllgrandchild;
+	struct RedBlackNode *restrict rlrgrandchild;
 
 	while (parent != NULL) {
 		--stack_ptr;
 		grandparent = *stack_ptr;
 
-		node   = parent->right;
-		lchild = node->left;
+		rnode   = parent->right;
+		rlchild = rnode->left;
 
-		if (node->color == RED) {
-			/* parent is BLACK, node is RED
+		if (rnode->color == RED) {
+			/* parent is BLACK, rnode is RED
 			 * ────────────────────────────────────────────────── */
-			node->color = BLACK;
+			rnode->color = BLACK;
 
 			if (grandparent != NULL) /* parent != root */
 				root = &grandparent->left;
 
-			*root = node; /* node is the new root */
+			*root = rnode; /* rnode is the new root */
 
-			/* node->left MAY be replaced */
+			/* rnode->left MAY be replaced */
 
-			llgrandchild = lchild->left;
-			lrgrandchild = lchild->right;
+			rllgrandchild = rlchild->left;
+			rlrgrandchild = rlchild->right;
 
-			if (lrgrandchild->color == RED) {
-				/* no need to update lchild */
-				lrgrandchild->color = BLACK;
+			if (rlrgrandchild->color == RED) {
+				/* no need to update rlchild */
+				rlrgrandchild->color = BLACK;
 
-				/* lchild must have been BLACK */
-				lchild->color = RED;
-				lchild->left  = parent;
+				/* rlchild must have been BLACK */
+				rlchild->color = RED;
+				rlchild->left  = parent;
 
-				parent->right = llgrandchild;
-			} else if (llgrandchild->color == RED) {
-				/* make llgrandchild new lchild */
-				node->left = llgrandchild;
+				parent->right = rllgrandchild;
 
-				parent->right      = llgrandchild->left;
-				llgrandchild->left = parent;
+			} else if (rllgrandchild->color == RED) {
+				/* make rllgrandchild new rlchild */
+				rnode->left = rllgrandchild;
 
-				lchild->left        = llgrandchild->right;
-				llgrandchild->right = lchild;
+				parent->right      = rllgrandchild->left;
+				rllgrandchild->left = parent;
+
+				rlchild->left       = rllgrandchild->right;
+				rllgrandchild->right = rlchild;
 
 			} else {
-				/* lchild is root, no need to update */
-				lchild->left = parent;
+				/* rlchild is root, no need to update */
+				rlchild->left = parent;
 
 				/* parent and parent->left were BLACK */
 				parent->color = RED;
-				parent->right = llgrandchild;
+				parent->right = rllgrandchild;
 			}
 
 			return true; /* always completely restorable */
 
 		} else if (parent->color == RED) {
-			/* parent is RED, node is BLACK
+			/* parent is RED, rnode is BLACK
 			 * ────────────────────────────────────────────────── */
 			if (grandparent != NULL) /* parent != root */
 				root = &grandparent->left;
 
 			/* root will ALWAYS be replaced */
-			if (lchild->color == RED) {
-				*root = lchild; /* lchild is new root */
+			if (rlchild->color == RED) {
+				*root = rlchild; /* rlchild is new root */
 
 				parent->color = BLACK;
-				parent->right = lchild->left;
-				lchild->left  = parent;
+				parent->right = rlchild->left;
+				rlchild->left = parent;
 
-				node->left    = lchild->right;
-				lchild->right = node;
+				rnode->left    = rlchild->right;
+				rlchild->right = rnode;
 
 			} else {
-				*root = node; /* node is new root */
+				*root = rnode; /* rnode is new root */
 
-				node->left = parent;
+				rnode->left = parent;
 
-				parent->right = lchild;
+				parent->right = rlchild;
 			}
 
 			return true; /* always completely restorable */
 
-		/* parent is BLACK, node is BLACK
+		/* parent is BLACK, rnode is BLACK
 		 * ────────────────────────────────────────────────────────── */
-		} else if (lchild->color == RED) {
-			lchild->color = BLACK;
+		} else if (rlchild->color == RED) {
+			rlchild->color = BLACK;
 
 			if (grandparent != NULL) /* parent != root */
 				root = &grandparent->left;
 
-			*root = lchild; /* lchild is new root */
+			*root = rlchild; /* rlchild is new root */
 
-			parent->right = lchild->left;
-			lchild->left  = parent;
+			parent->right = rlchild->left;
+			rlchild->left = parent;
 
-			node->left    = lchild->right;
-			lchild->right = node;
+			rnode->left    = rlchild->right;
+			rlchild->right = rnode;
 
 			return true; /* always completely restorable */
 
 		} else {
-			rchild = node->right;
+			rchild = rnode->right;
 
 			if (rchild->color == RED) {
 				rchild->color = BLACK;
@@ -215,21 +216,22 @@ rb_replace_black_unwind(struct RedBlackNode *restrict *restrict root,
 				if (grandparent != NULL) /* parent != root */
 					root = &grandparent->left;
 
-				*root = node; /* node is new root */
+				*root = rnode; /* rnode is new root */
 
-				node->left = parent;
+				rnode->left = parent;
 
-				parent->right = lchild;
+				parent->right = rlchild;
 
 				return true; /* always completely restorable */
 			}
 		}
-		/* parent, sibling (parent->left), node (parent->right), lchild
-		 * (node->left), and rchild (node->right) are ALL BLACK
+		/* parent, lnode (parent->left), rnode (parent->right),
+		 * rlchild (rnode->left), and rchild (rnode->right) are ALL
+		 * BLACK
 		 *
-		 * recolor node to restore balance in parent tree, but still
+		 * recolor rnode to restore balance in parent tree, but still
 		 * deficient 1 black height -> recurse */
-		node->color = RED;
+		rnode->color = RED;
 
 		parent = grandparent;
 	}
@@ -467,7 +469,7 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 	/* rchild and replacement are BLACK, right subtree is valid (balanced)
 	 * but deficient 1 black height
 	 *
-	 * lchild has black height of AT LEAST 2 (inclusive)
+	 * lchild has black height of AT LEAST 3 (inclusive)
 	 * ────────────────────────────────────────────────────────────────── */
 
 	/* TODO */
