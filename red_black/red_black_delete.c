@@ -410,22 +410,22 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 
 		restored = (rchild != NULL);
 		if (restored)
-			rchild->color = BLACK; /* rchild is RED -> restore */
+			rchild->color = BLACK; /* rchild RED leaf -> restore */
 
 		return restored;
 
 	} else if (rchild == NULL) {
 		*tree = lchild;
 		lchild->color = BLACK;
-		return true; /* lchild must be RED, -> BLACK -> restored */
+		return true; /* lchild must be RED leaf, -> BLACK -> restored */
 	}
 
 	/* find min successor, its parent, its right child, and its ancestor
-	 * stack of rchild->left->left-> ... ->grandparent
+	 * stack of rchild->left->left-> ... ->replacement_parent->replacement
 	 * ────────────────────────────────────────────────────────────────── */
 	replacement = rchild->left;
 
-	if (replacement == NULL) /* black height of 1 or 2 sometimes restorable */
+	if (replacement == NULL) /* black height of 1 or 2 */
 		return rb_replace_black_shallow(tree,
 						lchild,
 						rchild);
@@ -464,14 +464,17 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		 *
 		 * replacement guaranteed BLACK */
 		*tree = replacement;
-		replacement->left  = lchild;
+		replacement->left = lchild;
 		return true;
 	}
+
+	*tree = lchild;
 
 	/* rchild and replacement are BLACK, right subtree is valid (balanced)
 	 * but deficient 1 black height
 	 * ────────────────────────────────────────────────────────────────── */
 
+	/* TODO */
 }
 
 
