@@ -24,9 +24,9 @@ static inline void
 rb_insert_root(struct RedBlackNode *restrict *const restrict tree,
 	       const struct Key *const restrict key)
 {
-	struct RedBlackNode *const restrict node = rb_new_node(key);
-	node->color = BLACK;
-	*tree = node;
+	struct RedBlackNode *const restrict root = rb_new_node(key);
+	root->color = BLACK;
+	*tree = root;
 }
 
 /* insert state-machine functions */
