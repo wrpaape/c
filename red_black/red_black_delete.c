@@ -382,20 +382,25 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 	return true; /* completely restored */
 }
 
+/* search upto 2 nodes deep into left subtree of deleted node
+ * for RED nodes -> opportunity to restored balance and black height
+ * after call to rb_replace_black_rtree */
 static inline bool
 rb_replace_black_ltree(struct RedBlackNode *restrict *const restrict tree,
 		       struct RedBlackNode *const restrict lnode,
 		       struct RedBlackNode *const restrict rnode)
 {
+	struct RedBlackNode *restrict llchild;
 	struct RedBlackNode *restrict lrchild;
 	struct RedBlackNode *restrict lrlgrandchild;
 	struct RedBlackNode *restrict lrrgrandchild;
 
-	lrchild       = lnode->right;
-	lrlgrandchild = lrchild->left;
-	lrrgrandchild = lrchild->right;
+	lrchild = lnode->right;
 
 	if (lnode->color == RED) {
+		lrlgrandchild = lrchild->left;
+		lrrgrandchild = lrchild->right;
+
 		if (lrlgrandchild->color == RED) {
 			if (lrrgrandchild->color == RED) {
 				*tree = lrchild; /* must be BLACK */
@@ -443,14 +448,47 @@ rb_replace_black_ltree(struct RedBlackNode *restrict *const restrict tree,
 				rnode->left = lrchild;
 
 				lrchild->color = RED;
-
 			}
 		}
 
-	} else {
+	} else if (lrchild->color == RED) {
+		lrchild->color = BLACK;
 
+		lnode->right  = lrchild->left;
+		lrchild->left = lnode;
+
+		rnode->left    = lrchild->right;
+		lrchild->right = rnode;
+
+		*tree = lrchild;
+
+	} else {
+		llchild = lnode->left;
+
+		if (llchild->color == RED) {
+			llchild->color = BLACK;
+
+			*tree = lnode;
+
+			lnode->right = rnode;
+
+			rnode->left = lrchild;
+
+		} else {
+			*tree = rnode;
+
+			rnode->left = lnode;
+
+			lnode->color = RED;
+
+			/* balanced, but still deficient 1 black height
+			 * ────────────────────────────────────────────────── */
+			return false;
+		}
 	}
 
+	/* balance and black height restored to pre-deletion state
+	 * ────────────────────────────────────────────────────────────────── */
 	return true;
 }
 
