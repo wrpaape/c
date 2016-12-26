@@ -382,6 +382,14 @@ rb_replace_black_rtree(struct RedBlackNode *restrict *restrict root,
 	return true; /* completely restored */
 }
 
+static inline bool
+rb_replace_black_ltree(struct RedBlackNode *restrict *const restrict tree,
+		       struct RedBlackNode *const restrict lnode,
+		       struct RedBlackNode *const restrict rnode)
+{
+	return false;
+}
+
 
 static inline bool
 rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
@@ -465,6 +473,10 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 	}
 
 	*tree = lchild;
+
+	return rb_replace_black_ltree(tree,
+				      lchild,
+				      replacement);
 
 	/* rchild and replacement are BLACK, right subtree is valid (balanced)
 	 * but deficient 1 black height
