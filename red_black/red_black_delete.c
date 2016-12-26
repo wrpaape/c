@@ -387,7 +387,71 @@ rb_replace_black_ltree(struct RedBlackNode *restrict *const restrict tree,
 		       struct RedBlackNode *const restrict lnode,
 		       struct RedBlackNode *const restrict rnode)
 {
-	return false;
+	struct RedBlackNode *restrict lrchild;
+	struct RedBlackNode *restrict lrlgrandchild;
+	struct RedBlackNode *restrict lrrgrandchild;
+
+	lrchild       = lnode->right;
+	lrlgrandchild = lrchild->left;
+	lrrgrandchild = lrchild->right;
+
+	if (lnode->color == RED) {
+		if (lrlgrandchild->color == RED) {
+			if (lrrgrandchild->color == RED) {
+				*tree = lrchild; /* must be BLACK */
+
+				lrchild->left  = lnode;
+				lrchild->right = rnode;
+
+				lnode->right = lrlgrandchild;
+
+				rnode->left = lrrgrandchild;
+
+				lrlgrandchild->color = BLACK;
+
+			} else {
+				*tree = lnode;
+
+				lnode->color = BLACK;
+
+				lrchild->right = rnode;
+
+				rnode->color = RED;
+				rnode->left  = lrrgrandchild;
+			}
+
+		} else {
+			*tree = lnode;
+			lnode->color = BLACK;
+
+			if (lrrgrandchild->color == RED) {
+				lrrgrandchild->color = BLACK;
+
+				lrchild->color      = RED;
+				lrchild->right      = lrrgrandchild->left;
+				lrrgrandchild->left = lrchild;
+
+				rnode->color         = RED;
+				rnode->left          = lrrgrandchild->right;
+				lrrgrandchild->right = rnode;
+
+				lnode->right = lrrgrandchild;
+
+			} else {
+				lnode->right = rnode;
+
+				rnode->left = lrchild;
+
+				lrchild->color = RED;
+
+			}
+		}
+
+	} else {
+
+	}
+
+	return true;
 }
 
 
@@ -472,19 +536,17 @@ rb_replace_black(struct RedBlackNode *restrict *const restrict tree,
 		return true;
 	}
 
-	*tree = lchild;
-
-	return rb_replace_black_ltree(tree,
-				      lchild,
-				      replacement);
-
 	/* rchild and replacement are BLACK, right subtree is valid (balanced)
 	 * but deficient 1 black height
 	 *
+	 * right subtree of replacement has BLACK root and black height of AT
+	 * LEAST 2 (inclusive)
+	 *
 	 * lchild has black height of AT LEAST 3 (inclusive)
 	 * ────────────────────────────────────────────────────────────────── */
-
-	/* TODO */
+	return rb_replace_black_ltree(tree,
+				      lchild,
+				      replacement);
 }
 
 
