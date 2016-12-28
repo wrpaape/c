@@ -50,7 +50,7 @@ put_red_black_node(char *restrict buffer,
 
 	*buffer = '('; ++buffer;
 
-	if (node->color == RED) {
+	if (node->is_red) {
 		*buffer = 'R'; ++buffer;
 		*buffer = 'E'; ++buffer;
 		*buffer = 'D'; ++buffer;

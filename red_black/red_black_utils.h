@@ -9,11 +9,6 @@
 
 /* struct declarations
  * ────────────────────────────────────────────────────────────────────────── */
-enum Color {
-	RED,
-	BLACK
-};
-
 enum RedBlackCorrectState {
 	CORRECT_PREV,
 	CORRECT_THIS,
@@ -22,7 +17,7 @@ enum RedBlackCorrectState {
 
 struct RedBlackNode {
 	const struct Key *key;
-	enum Color color;
+	bool is_red;
 	struct RedBlackNode *left;
 	struct RedBlackNode *right;
 };

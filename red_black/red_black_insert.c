@@ -3,7 +3,7 @@
 static inline struct RedBlackNode *
 rb_new_node(const struct Key *const restrict key)
 {
-	/* static alloc, all pointers == NULL, color == RED */
+	/* static alloc, all pointers == NULL, is_red == false */
 	static struct RedBlackNode buffer[128];
 	static struct RedBlackNode *restrict alloc	       = &buffer[0];
 	static struct RedBlackNode *const restrict alloc_until = &buffer[128];
@@ -12,7 +12,8 @@ rb_new_node(const struct Key *const restrict key)
 		struct RedBlackNode *const restrict node = alloc;
 		++alloc;
 
-		node->key = key;
+		node->key    = key;
+		node->is_red = true;
 		return node;
 	}
 
@@ -25,7 +26,7 @@ rb_insert_root(struct RedBlackNode *restrict *const restrict tree,
 	       const struct Key *const restrict key)
 {
 	struct RedBlackNode *const restrict root = rb_new_node(key);
-	root->color = BLACK;
+	root->is_red = false;
 	*tree = root;
 }
 
@@ -174,17 +175,17 @@ rb_insert_correct_ll(struct RedBlackNode *restrict *const restrict tree,
 		     struct RedBlackNode *const restrict grandparent,
 		     struct RedBlackNode *const restrict parent)
 {
-	if (parent->color == RED) {
-		parent->color = BLACK;
+	if (parent->is_red) {
+		parent->is_red = false;
 
 		struct RedBlackNode *const restrict uncle = grandparent->right;
 
-		if ((uncle != NULL) && (uncle->color == RED)) {
-			uncle->color = BLACK;
+		if ((uncle != NULL) && (uncle->is_red)) {
+			uncle->is_red = false;
 			return CORRECT_PREV; /* need to propogate recolor */
 		}
 
-		grandparent->color = RED;
+		grandparent->is_red = true;
 
 		rb_rotate_right(tree,
 				grandparent,
@@ -200,18 +201,18 @@ rb_insert_correct_lr(struct RedBlackNode *restrict *const restrict tree,
 		     struct RedBlackNode *const restrict parent,
 		     struct RedBlackNode *const restrict child)
 {
-	if (parent->color == RED) {
+	if (parent->is_red) {
 		struct RedBlackNode *const restrict uncle = grandparent->right;
 
-		if ((uncle != NULL) && (uncle->color == RED)) {
-			uncle->color  = BLACK;
-			parent->color = BLACK;
+		if ((uncle != NULL) && (uncle->is_red)) {
+			uncle->is_red  = false;
+			parent->is_red = false;
 			return CORRECT_PREV; /* need to propogate recolor */
 		}
 
-		grandparent->color = RED;
+		grandparent->is_red = true;
 
-		child->color = BLACK;
+		child->is_red = false;
 
 		rb_rotate_left_right(tree,
 				     grandparent,
@@ -228,17 +229,17 @@ rb_insert_correct_rr(struct RedBlackNode *restrict *const restrict tree,
 		     struct RedBlackNode *const restrict parent)
 {
 
-	if (parent->color == RED) {
-		parent->color = BLACK;
+	if (parent->is_red) {
+		parent->is_red = false;
 
 		struct RedBlackNode *const restrict uncle = grandparent->left;
 
-		if ((uncle != NULL) && (uncle->color == RED)) {
-			uncle->color = BLACK;
+		if ((uncle != NULL) && (uncle->is_red)) {
+			uncle->is_red = false;
 			return CORRECT_PREV; /* need to propogate recolor */
 		}
 
-		grandparent->color = RED;
+		grandparent->is_red = true;
 
 		rb_rotate_left(tree,
 			       grandparent,
@@ -254,18 +255,18 @@ rb_insert_correct_rl(struct RedBlackNode *restrict *const restrict tree,
 		     struct RedBlackNode *const restrict parent,
 		     struct RedBlackNode *const restrict child)
 {
-	if (parent->color == RED) {
+	if (parent->is_red) {
 		struct RedBlackNode *const restrict uncle = grandparent->left;
 
-		if ((uncle != NULL) && (uncle->color == RED)) {
-			uncle->color  = BLACK;
-			parent->color = BLACK;
+		if ((uncle != NULL) && (uncle->is_red)) {
+			uncle->is_red  = false;
+			parent->is_red = false;
 			return CORRECT_PREV; /* need to propogate recolor */
 		}
 
-		grandparent->color = RED;
+		grandparent->is_red = true;
 
-		child->color = BLACK;
+		child->is_red = false;
 
 		rb_rotate_right_left(tree,
 				     grandparent,
@@ -312,7 +313,7 @@ rb_insert_ll(struct RedBlackNode *restrict *const restrict tree,
 			       key);
 
 		if (state == CORRECT_PREV) {
-			parent->color = RED;
+			parent->is_red = true;
 			return CORRECT_THIS;
 
 		} else if (state == CORRECT_THIS) {
@@ -361,7 +362,7 @@ rb_insert_lr(struct RedBlackNode *restrict *const restrict tree,
 			       key);
 
 		if (state == CORRECT_PREV) {
-			parent->color = RED;
+			parent->is_red = true;
 			return CORRECT_THIS;
 
 		} else if (state == CORRECT_THIS) {
@@ -409,7 +410,7 @@ rb_insert_rr(struct RedBlackNode *restrict *const restrict tree,
 			       key);
 
 		if (state == CORRECT_PREV) {
-			parent->color = RED;
+			parent->is_red = true;
 			return CORRECT_THIS;
 
 		} else if (state == CORRECT_THIS) {
@@ -458,7 +459,7 @@ rb_insert_rl(struct RedBlackNode *restrict *const restrict tree,
 			       key);
 
 		if (state == CORRECT_PREV) {
-			parent->color = RED;
+			parent->is_red = true;
 			return CORRECT_THIS;
 
 		} else if (state == CORRECT_THIS) {

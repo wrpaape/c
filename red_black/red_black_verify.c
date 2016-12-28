@@ -2,9 +2,9 @@
 
 int
 do_red_black_verify(const struct RedBlackNode *const restrict node,
-		    const struct Key *const restrict min,
-		    const struct Key *const restrict max,
-		    const enum Color parent_color,
+		    const struct Key *const restrict min_key,
+		    const struct Key *const restrict max_key,
+		    const bool parent_is_red,
 		    int black_height)
 {
 	if (node == NULL)
@@ -13,15 +13,15 @@ do_red_black_verify(const struct RedBlackNode *const restrict node,
 	const struct Key *const restrict node_key = node->key;
 
 	if (   (key_compare(node_key,
-			    min) < 0)
+			    min_key) < 0)
 	    || (key_compare(node_key,
-			    max) > 0))
+			    max_key) > 0))
 		return -1;
 
-	const enum Color node_color = node->color;
+	const bool node_is_red = node->is_red;
 
-	if (node_color == RED) {
-		if (parent_color == RED)
+	if (node_is_red) {
+		if (parent_is_red)
 			return -1;
 
 	} else {
@@ -29,9 +29,9 @@ do_red_black_verify(const struct RedBlackNode *const restrict node,
 	}
 
 	const int left_black_height = do_red_black_verify(node->left,
-							  min,
+							  min_key,
 							  node_key,
-							  node_color,
+							  node_is_red,
 							  black_height);
 
 	if (left_black_height < 0)
@@ -39,8 +39,8 @@ do_red_black_verify(const struct RedBlackNode *const restrict node,
 
 	const int right_black_height = do_red_black_verify(node->right,
 							   node_key,
-							   max,
-							   node_color,
+							   max_key,
+							   node_is_red,
 							   black_height);
 
 	return (right_black_height == left_black_height)
@@ -54,6 +54,6 @@ red_black_verify(const struct RedBlackNode *const restrict tree)
 	return (do_red_black_verify(tree,
 				    &KEY_MIN,
 				    &KEY_MAX,
-				    RED,
+				    true,
 				    0) >= 0);
 }
