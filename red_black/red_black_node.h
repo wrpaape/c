@@ -1,25 +1,18 @@
-#ifndef RED_BLACK_UTILS_H_
-#define RED_BLACK_UTILS_H_
+#ifndef RED_BLACK_NODE_H_
+#define RED_BLACK_NODE_H_
 
 /* external dependencies
  * ────────────────────────────────────────────────────────────────────────── */
-#include "key_utils.h" /* struct Key, get_key, key_compare, exit_on_* */
 #include <stdbool.h>   /* bool */
 
 
-/* struct declarations
+/* typedefs, struct declarations
  * ────────────────────────────────────────────────────────────────────────── */
-enum RedBlackCorrectState {
-	CORRECT_PREV,
-	CORRECT_THIS,
-	CORRECT_DONE
-};
-
 struct RedBlackNode {
-	const struct Key *key;
+	const void *key;
 	bool is_red;
-	struct RedBlackNode *left;
-	struct RedBlackNode *right;
+	struct RedBlackNode *restrict left;
+	struct RedBlackNode *restrict right;
 };
 
-#endif /* ifndef RED_BLACK_UTILS_H_ */
+#endif /* ifndef RED_BLACK_NODE_H_ */

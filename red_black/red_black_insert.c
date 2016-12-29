@@ -1,7 +1,8 @@
 #include "red_black_insert.h"
 
 static inline struct RedBlackNode *
-rb_new_node(const struct Key *const restrict key)
+rb_new_node(const struct Key *const restrict key,
+	    const bool is_red)
 {
 	/* static alloc, all pointers == NULL, is_red == false */
 	static struct RedBlackNode buffer[128];
@@ -13,7 +14,7 @@ rb_new_node(const struct Key *const restrict key)
 		++alloc;
 
 		node->key    = key;
-		node->is_red = true;
+		node->is_red = is_red;
 		return node;
 	}
 
@@ -21,13 +22,25 @@ rb_new_node(const struct Key *const restrict key)
 	__builtin_unreachable();
 }
 
+static inline struct RedBlackNode *
+rb_new_red_node(const struct Key *const restrict key)
+{
+	return rb_new_node(key,
+			   true);
+}
+
+static inline struct RedBlackNode *
+rb_new_black_node(const struct Key *const restrict key)
+{
+	return rb_new_node(key,
+			   false);
+}
+
 static inline void
 rb_insert_root(struct RedBlackNode *restrict *const restrict tree,
 	       const struct Key *const restrict key)
 {
-	struct RedBlackNode *const restrict root = rb_new_node(key);
-	root->is_red = false;
-	*tree = root;
+	*tree = rb_new_black_node(key);
 }
 
 /* insert state-machine functions */
@@ -73,7 +86,7 @@ red_black_insert(struct RedBlackNode *restrict *const restrict tree,
 			parent = grandparent->left;
 
 			if (parent == NULL) {
-				grandparent->left = rb_new_node(key);
+				grandparent->left = rb_new_red_node(key);
 
 			} else {
 				compare = key_compare(key,
@@ -95,7 +108,7 @@ red_black_insert(struct RedBlackNode *restrict *const restrict tree,
 			parent = grandparent->right;
 
 			if (parent == NULL) {
-				grandparent->right = rb_new_node(key);
+				grandparent->right = rb_new_red_node(key);
 
 			} else {
 				compare = key_compare(key,
@@ -123,9 +136,8 @@ rb_rotate_left(struct RedBlackNode *restrict *const restrict tree,
 {
 	*tree = rparent;
 
-	struct RedBlackNode *const restrict tmp = rparent->left;
+	grandparent->right = rparent->left;
 	rparent->left      = grandparent;
-	grandparent->right = tmp;
 }
 
 static inline void
@@ -135,9 +147,8 @@ rb_rotate_right(struct RedBlackNode *restrict *const restrict tree,
 {
 	*tree = lparent;
 
-	struct RedBlackNode *const restrict tmp = lparent->right;
+	grandparent->left = lparent->right;
 	lparent->right    = grandparent;
-	grandparent->left = tmp;
 }
 
 static inline void
@@ -288,7 +299,7 @@ rb_insert_ll(struct RedBlackNode *restrict *const restrict tree,
 	struct RedBlackNode *const restrict next = parent->left;
 
 	if (next == NULL) {
-		parent->left = rb_new_node(key);
+		parent->left = rb_new_red_node(key);
 		return rb_insert_correct_ll(tree,
 					    grandparent,
 					    parent);
@@ -335,7 +346,7 @@ rb_insert_lr(struct RedBlackNode *restrict *const restrict tree,
 	struct RedBlackNode *const restrict next = parent->right;
 
 	if (next == NULL) {
-		struct RedBlackNode *const restrict node = rb_new_node(key);
+		struct RedBlackNode *const restrict node = rb_new_red_node(key);
 		parent->right = node;
 		return rb_insert_correct_lr(tree,
 					    grandparent,
@@ -385,7 +396,7 @@ rb_insert_rr(struct RedBlackNode *restrict *const restrict tree,
 	struct RedBlackNode *const restrict next = parent->right;
 
 	if (next == NULL) {
-		parent->right = rb_new_node(key);
+		parent->right = rb_new_red_node(key);
 		return rb_insert_correct_rr(tree,
 					    grandparent,
 					    parent);
@@ -432,7 +443,7 @@ rb_insert_rl(struct RedBlackNode *restrict *const restrict tree,
 	struct RedBlackNode *const restrict next = parent->left;
 
 	if (next == NULL) {
-		struct RedBlackNode *const restrict node = rb_new_node(key);
+		struct RedBlackNode *const restrict node = rb_new_red_node(key);
 		parent->left = node;
 		return rb_insert_correct_rl(tree,
 					    grandparent,
